@@ -8,6 +8,15 @@
 
 ## 安裝與解除安裝
 
+### 0. 取得專案
+
+```bash
+git clone https://github.com/your-org/python-skills.git
+cd python-skills
+```
+
+> 建議 clone 到固定位置（如 `~/python-skills`），因為 install 腳本會建立 symlink 指向此目錄。移動或刪除源目錄會導致所有 AI 工具的 skill 失效。
+
 腳本支援兩個維度的設定：**指定技能分類 (`--skills`)** 以及 **指定 AI 工具**。
 
 ### 1. 指定技能分類 (可選)
@@ -75,6 +84,24 @@ python-skills/
 
 > 參照 [awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills)
 > 如需新增工具或修正安裝路徑，請編輯 [`_config.sh`](./_config.sh)，install / uninstall 腳本會自動套用。
+
+---
+
+## Quant Skills 概覽
+
+量化分析技能集以 pipeline 架構組織，詳見 [入口 SKILL.md](./skills/quant/SKILL.md) 的完整路由表。
+
+
+| Skill | 定位 |
+|-------|------|
+| [coding-standards](./skills/quant/coding-standards/SKILL.md) | 跨層通用規範：前視偏誤、IS/OOS 切分、數值穩定性 |
+| [data-preprocessing](./skills/quant/data-preprocessing/SKILL.md) | 資料清洗、缺失值、去極值、標準化、跨頻率對齊 |
+| [strategy-construction](./skills/quant/strategy-construction/SKILL.md) | 通用策略設計原則 + 截面選股的信號組合與權重分配 |
+| [risk-management](./skills/quant/risk-management/SKILL.md) | VaR/CVaR、曝險控制、槓桿、回撤保護、壓力測試 |
+| [execution-simulation](./skills/quant/execution-simulation/SKILL.md) | 滑價、漲跌停、市場衝擊、做空成本、結算 |
+| [performance-evaluation](./skills/quant/performance-evaluation/SKILL.md) | Sharpe/MDD/Sortino 陷阱、因子評價、換手率分析 |
+| [multiple-testing](./skills/quant/multiple-testing/SKILL.md) | FDR 校正、Haircut Sharpe、Placebo Test、實驗日誌 |
+| [regime-analysis](./skills/quant/regime-analysis/SKILL.md) | Regime 分類、結構性斷裂偵測、循環論證防護 |
 
 ---
 
