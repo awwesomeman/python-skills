@@ -1,0 +1,150 @@
+---
+name: skill-creator
+description: Guidelines for designing and writing Claude skills. Use when creating new skills, refactoring existing skills, reviewing skill quality, or deciding how to structure a skill project. Also use when asking "should this be a skill?", "how to split skills?", or "is this skill too long/complex?".
+---
+
+# Skill 開發指南 (Skill Creator Guidelines)
+
+> Skill 的目的是壓縮專家判斷力，而非取代程式碼生成能力。
+
+---
+
+## 1. Skill 是什麼？
+
+Skill = **判斷力壓縮包 (Judgment Compression Pack)**
+
+AI agent 已經會寫程式碼。它缺的是：
+- 哪些地方有隱藏陷阱？
+- 業界資深人士會怎麼做？
+- 什麼情況下「看起來對」但其實會出事？
+
+Skill 的價值在於提供這些 **principles + pitfalls**，讓 agent 做出更好的決策。
+
+---
+
+## 2. 黃金比例：80/20
+
+| 內容類型 | 比例 | 說明 |
+|----------|------|------|
+| 原則與陷阱 | 80% | 判斷準則、常見錯誤、何時用什麼、為什麼 |
+| 程式碼範例 | 20% | 僅用於展示「陷阱的正確寫法」或「容易寫錯的 pattern」 |
+
+### 程式碼範例的使用時機
+
+**應該放程式碼的情況：**
+- 正確寫法與錯誤寫法差異微妙（如 CUSUM 遞迴 vs `cumsum().clip()`）— 因為文字描述不足以傳達差異
+- API 呼叫方式不直覺（如 `join_asof(strategy="backward")`）— 因為 agent 可能猜錯參數
+- 一行程式碼能取代一段文字解釋
+
+**不應該放程式碼的情況：**
+- 完整函數實作 — agent 會自己寫，放進來只是佔 context window
+- 標準 library 用法 — agent 已經知道
+- 可以用一句話描述的邏輯
+
+---
+
+## 3. 結構設計原則
+
+### 3.1 層級架構（多 skill 專案）
+
+當一個領域有多個相關 skill 時，用父子架構組織。單一獨立 skill 不需要這層結構。
+
+```
+domain/
+├── SKILL.md          ← 入口：pipeline 流向、skill 路由表、通用原則
+├── sub-skill-a/
+│   └── SKILL.md      ← 專注於該層的原則與陷阱
+└── sub-skill-b/
+    └── SKILL.md
+```
+
+- **父層 SKILL.md**：負責路由（何時用哪個子 skill）與跨層通用原則
+- **子層 SKILL.md**：專注於該領域的判斷準則，不重複父層內容
+
+### 3.2 路由表（多 skill 專案）
+
+父層應包含明確的路由表，標示每個子 skill「何時使用」與「何時不要使用」。沒有路由表時，agent 面對多個相關 skill 會猶豫或選錯，浪費 context 載入不相關的 skill。
+
+### 3.3 Cross-cutting 規範（多 skill 專案）
+
+適用於所有子 skill 的規範（如 coding standards）應獨立為一個 skill，並在 description 中標明 cross-cutting 性質。這避免同一條規則散落在多個 skill 中，修改時遺漏。
+
+---
+
+## 4. 撰寫原則
+
+### 4.1 每條規則都要有「為什麼」
+
+不要只寫「禁止 X」，要寫「禁止 X，因為 Y 會導致 Z」。Agent 理解原因後，能在邊界情境做出正確判斷，而非機械式套用規則。
+
+### 4.2 標記適用範圍
+
+如果某些規則只適用於特定情境，明確標記（如 `(通用)` vs `(截面策略)`）。不標記時，agent 會在不適用的情境中強行套用規則，產出不合理的程式碼。
+
+### 4.3 提交前檢查清單
+
+每個 skill 結尾放一張檢查表。Agent 完成任務後容易遺漏細節，檢查表是最後一道防線，確保關鍵原則沒有被跳過。
+
+### 4.4 精簡優先
+
+- 單一 skill 控制在 100 行以內（理想值），不超過 150 行 — 超過此長度 agent 的注意力會被稀釋，重要規則被淹沒在細節中
+- 刪掉 agent 能從 context 推斷的內容
+- 用表格取代冗長的條件描述
+
+---
+
+## 5. 常見反模式 (Anti-patterns)
+
+### 5.1 把 Skill 當 Library
+
+**成因**：作者本身是工程師，習慣用程式碼表達知識，覺得「給完整實作最精確」。
+
+放入完整函數實作 → agent 直接複製貼上 → 失去彈性、佔用 context window。
+
+**修正**：只保留 1-3 行關鍵 pattern，讓 agent 自己寫完整實作。
+
+### 5.2 重複定義
+
+**成因**：各 skill 獨立撰寫，作者覺得「這裡也需要提一下」，逐漸累積出多處定義。
+
+同一個概念出現在多個 skill 中 → 修改時容易遺漏、產生矛盾版本。
+
+**修正**：只在一個 skill 中定義，其他 skill 用交叉引用（如「詳見 `performance-evaluation` skill」）。
+
+### 5.3 過度規範
+
+**成因**：作者想到越多邊界情境就越不放心，把所有可能都寫成硬性規則。
+
+Skill 變成法律文件 → agent 抓不到重點，反而在不重要的地方耗費注意力。
+
+**修正**：只規範「違反後果嚴重」的事項。輕微偏好用「建議」而非「禁止」。
+
+### 5.4 缺少路由（多 skill 專案）
+
+**成因**：每個 skill 各自寫得很好，但沒人負責「全局導航」。
+
+Agent 不知道該用哪個 skill → 載入錯誤的 skill 或全部載入。
+
+**修正**：在父層建立路由表，明確標示每個 skill 的適用場景與排除條件。
+
+### 5.5 Context 過大
+
+**成因**：不斷追加內容但從不刪減，或把參考資料直接嵌入 SKILL.md。
+
+單一 SKILL.md 超過 300 行 → 佔用 agent 過多 context window，降低推理品質。
+
+**修正**：拆分為多層架構，或將參考資料移到 `references/` 目錄按需載入。
+
+---
+
+## 提交前檢查清單
+
+| 類別 | 檢查項目 |
+|------|----------|
+| **目的** | 能用一句話說清楚這個 skill 解決的核心問題？ |
+| **比例** | 原則/陷阱 vs 程式碼接近 80/20？沒有完整函數實作？ |
+| **重複** | 沒有跟其他 skill 重複定義相同概念？ |
+| **路由** | Agent 能從 description 快速判斷該不該用這個 skill？ |
+| **精簡** | 行數 < 150？沒有 agent 能自行推斷的冗餘內容？ |
+| **適用性** | 有情境限制的規則是否標記了適用範圍？ |
+| **理由** | 每條「禁止/必須」規則是否附帶「為什麼」？ |
