@@ -1,6 +1,7 @@
 ---
 name: quant-overview
 description: Entry point for all quantitative analysis skills. Use whenever the task involves quant strategy development, backtesting, factor research, portfolio construction, or financial data processing. This skill routes to the correct sub-skill based on the task at hand.
+pipeline_layer: "Entry Point — 任務路由與 skill 索引"
 ---
 
 # 量化分析技能索引 (Quant Skills Overview)

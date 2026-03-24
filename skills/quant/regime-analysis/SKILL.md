@@ -27,7 +27,7 @@ pipeline_layer: "Stats Layer (Pandas/NumPy/SciPy)"
 
 分 regime 計算 Sharpe、MDD、Win Rate 等指標。
 
-🚨 **樣本數要求**：每個 regime 至少 60 個交易日，否則統計量不可靠，必須標記。
+🚨 **樣本數要求**：每個 regime 至少 60 個交易日方可做定性參考（須標記為低信度）；可靠的統計推論（如 Sharpe 顯著性檢定）需 ≥ 126 天（半年），理想為 252 天以上。
 
 ### 轉移矩陣
 計算 regime 間的轉移機率，觀察切換頻率。同時檢查 regime 切換後 N 天的策略 PnL — 若策略在 regime 轉換時系統性虧損，說明它對 regime shift 脆弱。
@@ -42,12 +42,12 @@ pipeline_layer: "Stats Layer (Pandas/NumPy/SciPy)"
 ## 3. 結構性斷裂偵測（通用）
 
 ### CUSUM（Page's Cumulative Sum）
-偵測均值漂移。遞迴公式 `S_t = max(0, S_{t-1} + x_t)`，超過 threshold 即警告。
+偵測均值漂移。遞迴公式 `S_t = max(0, S_{t-1} + (x_t - μ₀ - k))`，其中 `μ₀` 為基準均值、`k` 為容許偏移 (allowance)，`S_t` 超過 threshold `h` 即警告。若 `x_t` 未去均值（如原始報酬），CUSUM 會因正均值不斷向上漂移而頻繁誤報。
 
 🚨 不可用 `cumsum().clip(lower=0)` 近似 — 該寫法不會在歸零後重置，會系統性低估偏移。
 
 ### Rolling Stability
-最實用的日常監控：rolling Sharpe、rolling IC。🚨 窗口至少 126 個交易日（半年），太短波動極大易誤判。
+最實用的日常監控：rolling Sharpe、rolling IC。日頻策略建議窗口至少 126 個交易日（半年），最短不低於 63 天（一季），太短波動極大易誤判。高頻或加密貨幣市場的 regime 切換更快，可適當縮短窗口，但須注意估計量方差隨之增大。
 
 ### Chow Test
 在候選斷點處分段 OLS，檢驗係數是否顯著不同。適用於確認「Sharpe 顯著下降」是否為結構性變化。
@@ -60,6 +60,6 @@ pipeline_layer: "Stats Layer (Pandas/NumPy/SciPy)"
 |------|----------|
 | **前視偏誤** | 波動率門檻是否用 expanding（非全段）？ |
 | **HMM** | 是否 IS 訓練 / OOS 推論？狀態是否依 mean return 排序？ |
-| **樣本數** | 每 regime ≥ 60 天？不足是否標記？ |
+| **樣本數** | 每 regime ≥ 126 天（可靠推論）？60~125 天是否標記為低信度？ |
 | **循環論證** | regime 標籤生成是否獨立於策略績效？ |
-| **Rolling** | 窗口 ≥ 126 天？ |
+| **Rolling** | 窗口 ≥ 63 天？建議 ≥ 126 天？ |

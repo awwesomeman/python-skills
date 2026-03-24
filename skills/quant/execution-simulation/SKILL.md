@@ -30,7 +30,7 @@ pipeline_layer: "Execution Layer (Pandas/NumPy)"
 
 若對報酬率使用無限制 ffill，回測系統會默默幫你「躲過」破產（帳面價格被凍結）。
 
-**必須為下市股票認列強制清算虧損**。破產清算通常歸零 (-100%)，被低價併購可能有回收率，但壓力測試應以 -100% 計。
+**必須為下市股票認列強制清算虧損**，並依下市原因區分處理：破產清算認列 -100%；非自願下市（被收購、私有化等）使用最後交易日收盤價或收購對價計算回收率。壓力測試情境可統一以 -100% 計。
 
 ---
 
@@ -41,7 +41,8 @@ pipeline_layer: "Execution Layer (Pandas/NumPy)"
 **正確假設**：T 日收盤計算訊號 → **T+1 日** 以 VWAP 或 Open 執行。
 
 ```python
-strategy_daily_return = signal_t.shift(1) * vwap_return_t
+# T日收盤產生目標權重 → T+1日以VWAP執行
+strategy_daily_return = target_weight_t.shift(1) * vwap_return_t
 ```
 
 ---
@@ -64,7 +65,15 @@ strategy_daily_return = signal_t.shift(1) * vwap_return_t
 
 ---
 
-## 7. 結算與企業行為（通用）
+## 7. 再平衡頻率與成本的權衡（通用）
+
+再平衡頻率越高 → 信號越新鮮、追蹤誤差越小，但交易成本越高。存在一個**最佳頻率**使 Net Sharpe 最大化（詳見 `performance-evaluation` §5 最佳持倉期分析）。
+
+開發階段應在多個再平衡頻率下計算 Gross 與 Net Sharpe，確認成本敏感度。若 Gross → Net 落差隨頻率提高而急劇擴大，說明策略的 alpha 不足以覆蓋高頻交易成本。
+
+---
+
+## 8. 結算與企業行為（通用）
 
 - **T+N 交割**：賣出資金不能立刻用於次日買入。Cash Management 需分開記錄「帳面權益」與「可用現金」
 - **現金股息**：配息從股價扣除、稍後入帳為現金。回測需明確定義是提取閒置還是 DRIP 再投入。海外投資需扣預扣稅 (Withholding Tax)

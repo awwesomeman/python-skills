@@ -1,12 +1,12 @@
 ---
 name: quant-data-preprocessing
-description: Pitfalls and standards for cleaning, transforming, and standardizing quantitative financial data in the context of quant strategy backtesting. Enforces the Polars-first architecture. Use when working on feature engineering, data pipelines, or any data cleaning for quant strategies.
+description: Pitfalls and standards for cleaning, transforming, and standardizing quantitative financial data in the context of quant strategy backtesting. Use when working on feature engineering, data pipelines, or any data cleaning for quant strategies.
 pipeline_layer: "Data Layer (Polars LazyFrame)"
 ---
 
 # 量化資料前處理規範 (Data Preprocessing)
 
-> 本層強制使用 Polars Lazy API（邊界規則詳見 `coding-standards` §3）。可獨立用於資料清洗，也可作為策略開發 pipeline 的第一步。
+> 建議優先使用 Polars Lazy API（邊界規則詳見 `coding-standards` §3）。可獨立用於資料清洗，也可作為策略開發 pipeline 的第一步。
 
 ---
 
@@ -25,24 +25,28 @@ pipeline_layer: "Data Layer (Polars LazyFrame)"
 
 ## 2. 缺失值處理（通用）
 
-### 絕對禁止 Backward Fill
-用未來的資料填補過去 = 前視偏誤。無例外。
+### 回測 Pipeline 中禁止 Backward Fill
+在回測或特徵建構 pipeline 中，對**時間序列方向**用未來的資料填補過去 = 前視偏誤。EDA、target variable 建構（如 forward return）、或非回測的資料清洗場景不在此限。
+
+**例外**：以下情況的 backward fill 不構成前視偏誤：
+- **已知靜態映射表**：如行業分類碼的生效日 backward fill 到該期間內所有日期（資訊在生效日即已公開）
+- **同一時間截面內**：如盤中逐筆行情的缺漏補回（不涉及跨期）
 
 ```python
 # ❌ 用明天的價格填今天
 df.with_columns(pl.col("price").fill_null(strategy="backward"))
-# ❌ 用全段均值填（包含未來）
+# ❌ 用全段均值填（時間序列方向上包含未來資料）
 df.with_columns(pl.col("pe_ratio").fill_null(pl.col("pe_ratio").mean()))
 ```
 
 ### Forward Fill 必須加 limit
-慢速變數（如財報）的 ffill 不設上限，會讓過期資料無限展期。必須設合理天數限制（如季報用 `limit=90`），且先確保時間排序。
+慢速變數（如財報）的 ffill 不設上限，會讓過期資料無限展期。必須設合理天數限制，且先確保時間排序。limit 應依市場法定公佈時限設定（如台股季報法定 45 天，可用 `limit=60~65`；美股 10-Q 法定 40~45 天，可用 `limit=55~60`）。對變化快速的基本面因子宜更保守。
 
 ### Polars NaN ≠ null 陷阱
 🚨 Polars 的 `.fill_null()` **不會處理浮點數 NaN**。從 Pandas 轉入的資料常混有 NaN，必須先 `.fill_nan(None)` 再做任何填補：
 
 ```python
-cs.numeric().fill_nan(None).forward_fill(limit=90).over("asset_id")
+cs.numeric().fill_nan(None).forward_fill(limit=65).over("asset_id")
 ```
 
 ---
@@ -51,7 +55,7 @@ cs.numeric().fill_nan(None).forward_fill(limit=90).over("asset_id")
 
 優先使用 **MAD (Median Absolute Deviation)** 而非標準差，因為標準差本身受極端值影響。
 
-核心邏輯：`median ± n_mad × MAD × 1.4826`（1.4826 為常態一致性常數），用 `.clip()` 截斷。
+核心邏輯：`median ± n_mad × MAD × 1.4826`（1.4826 為常態一致性常數），用 `.clip()` 截斷。`n_mad` 常見取值：**3**（等效常態 3σ，適合 ML 特徵，較積極截斷）、**5**（等效常態 5σ，適合截面選股，保留更多尾部資訊）。預設建議 **5**，除非有明確理由需要更積極的截斷。
 
 🚨 **Expression Context 陷阱**：在 Polars 中，`median()` 的計算範圍取決於 `.over()` 的 partition。必須搭配 `.over("date")` 確保在每個時間截面內獨立計算，否則 median 會對整欄求值（跨期混合 = 前視偏誤）。
 
@@ -67,7 +71,7 @@ cs.numeric().fill_nan(None).forward_fill(limit=90).over("asset_id")
 `(x - mean) / std`，必須搭配 `.over("date")`。
 
 ### Percentile Rank
-🚨 **嚴禁 `rank / rank.max()`**。同分 (ties) 時 `max()` 會把同分群壓縮到 100%。必須用 `rank / count()`。
+建議用 `rank / count()` 而非 `rank / rank.max()`，因為有同分 (ties) 時 `max()` 會把同分群壓縮到 100%。
 
 ### Gaussian Rank（送入 ML 前）
 排名需減 0.5 再除以 count，防止最高/最低分觸發 `ppf(1.0) = Infinity`：
@@ -93,7 +97,7 @@ cs.numeric().fill_nan(None).forward_fill(limit=90).over("asset_id")
 ## 6. 跨頻率對齊（通用）
 
 ### 黃金標準：`join_asof` + `strategy="backward"`
-對齊不同頻率（如日頻股價 + 季度財報）時，**絕對禁止** `left_join` + `ffill`。`join_asof` 確保每個時間點只能看見已公開的歷史資料：
+對齊不同頻率（如日頻股價 + 季度財報）時，優先使用 `join_asof`，語義更明確且不易出錯。若用 `left_join` + `ffill`，必須確認 ffill 不會把未來資料填入：
 
 ```python
 df_daily.join_asof(df_quarterly,
