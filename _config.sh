@@ -11,6 +11,7 @@ AI_TOOLS_NAMES=(
   "GitHub Copilot"
   "OpenCode"
   "Windsurf"
+  "OpenClaw"
 )
 
 AI_TOOLS_BASES=(
@@ -22,6 +23,7 @@ AI_TOOLS_BASES=(
   "$HOME/.copilot"
   "$HOME/.config/opencode"
   "$HOME/.codeium/windsurf"
+  "$HOME/.openclaw"
 )
 
 AI_TOOLS_PATHS=(
@@ -33,6 +35,19 @@ AI_TOOLS_PATHS=(
   "$HOME/.copilot/skills"
   "$HOME/.config/opencode/skills"
   "$HOME/.codeium/windsurf/skills"
+  "$HOME/.openclaw/skills"
+)
+
+AI_TOOLS_LOCAL_PATHS=(
+  ".agent/skills"
+  ".claude/skills"
+  ".agents/skills"
+  ".cursor/skills"
+  ".gemini/skills"
+  ".github/skills"
+  ".opencode/skills"
+  ".windsurf/skills"
+  ".openclaw/skills"
 )
 
 AI_TOOLS_ARGS=(
@@ -44,4 +59,5 @@ AI_TOOLS_ARGS=(
   "copilot"
   "opencode"
   "windsurf"
+  "openclaw"
 )

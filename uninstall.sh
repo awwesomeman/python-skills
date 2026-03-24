@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # uninstall.sh — Remove all symlinks created by install.sh.
-# Usage: bash uninstall.sh [--skills "git,python,quant"] [AI_TOOLS...]
+# Usage: bash uninstall.sh [--local] [--skills "git,python,quant"] [AI_TOOLS...]
 # Does NOT delete source files in this repository.
 set -euo pipefail
 
@@ -31,9 +31,14 @@ echo ""
 # Parse arguments
 SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
+USE_LOCAL=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -l|--local)
+      USE_LOCAL=true
+      shift
+      ;;
     -s|--skills)
       if [ -n "${2:-}" ]; then
         IFS=',' read -ra SELECTED_SKILLS <<< "$2"
@@ -92,6 +97,9 @@ if [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
     if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
       TARGET_INDICES+=("$i")
       echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
+    elif [ "$USE_LOCAL" = true ] && [ -d "$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}" ]; then
+      TARGET_INDICES+=("$i")
+      echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_LOCAL_PATHS[$i]})"
     fi
   done
 else
@@ -121,15 +129,26 @@ if [ ${#TARGET_INDICES[@]} -eq 0 ]; then
   exit 1
 fi
 
+if [ "$USE_LOCAL" = true ]; then
+  UNINSTALL_ROOT="$(pwd)"
+  echo -e "${BLUE}Removing from local paths under: $UNINSTALL_ROOT${NC}"
+  echo ""
+fi
+
 for i in "${TARGET_INDICES[@]}"; do
   tool="${AI_TOOLS_NAMES[$i]}"
-  target_base="${AI_TOOLS_PATHS[$i]}"
+  if [ "$USE_LOCAL" = true ]; then
+    target_base="$UNINSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+  else
+    target_base="${AI_TOOLS_PATHS[$i]}"
+  fi
   echo -e "${BLUE}-- Removing from $tool --${NC}"
+  echo "Target: $target_base"
 
   for skill in "${SKILLS[@]}"; do
     target_path="$target_base/$skill"
     remove_symlink "$target_path"
-    
+
     # Clean up empty parent directories (e.g. if ~/.cursor/skills/git is empty after removal)
     parent_dir="$(dirname "$target_path")"
     if [[ "$parent_dir" != "$target_base" && -d "$parent_dir" ]]; then

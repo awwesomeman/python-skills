@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install.sh — Install skills to AI agent skill directories via symlinks.
-# Usage: bash install.sh [--skills "git,python,quant"] [AI_TOOLS...]
+# Usage: bash install.sh [--local] [--skills "git,python,quant"] [AI_TOOLS...]
 # Re-run anytime skills are added/renamed to refresh symlinks.
 set -euo pipefail
 
@@ -30,6 +30,12 @@ install_skill() {
   if [ -L "$target_path" ]; then
     rm "$target_path"
   elif [ -e "$target_path" ]; then
+    local res_target="$(cd -P "$target_path" 2>/dev/null && pwd || true)"
+    local res_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
+    if [ -n "$res_target" ] && [ "$res_target" = "$res_source" ]; then
+      echo -e "${GREEN}[OK] $skill_name (covered by parent symlink)${NC}"
+      return
+    fi
     echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite${NC}"
     return
   fi
@@ -44,9 +50,14 @@ echo ""
 # Parse arguments
 SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
+USE_LOCAL=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    -l|--local)
+      USE_LOCAL=true
+      shift
+      ;;
     -s|--skills)
       if [ -n "${2:-}" ]; then
         IFS=',' read -ra SELECTED_SKILLS <<< "$2"
@@ -105,6 +116,9 @@ if [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
     if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
       TARGET_INDICES+=("$i")
       echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
+    elif [ "$USE_LOCAL" = true ] && [ -d "$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}" ]; then
+      TARGET_INDICES+=("$i")
+      echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_LOCAL_PATHS[$i]})"
     fi
   done
 else
@@ -134,9 +148,19 @@ if [ ${#TARGET_INDICES[@]} -eq 0 ]; then
   exit 1
 fi
 
+if [ "$USE_LOCAL" = true ]; then
+  INSTALL_ROOT="$(pwd)"
+  echo -e "${BLUE}Installing to local paths under: $INSTALL_ROOT${NC}"
+  echo ""
+fi
+
 for i in "${TARGET_INDICES[@]}"; do
   tool="${AI_TOOLS_NAMES[$i]}"
-  target_base="${AI_TOOLS_PATHS[$i]}"
+  if [ "$USE_LOCAL" = true ]; then
+    target_base="$INSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+  else
+    target_base="${AI_TOOLS_PATHS[$i]}"
+  fi
   echo -e "${BLUE}-- $tool --${NC}"
   echo "Target: $target_base"
 
@@ -149,4 +173,4 @@ done
 
 echo "Done. All symlinks installed."
 echo ""
-echo "To verify Gemini CLI for instance: ls -la ~/.gemini/skills/"
+echo "To verify: ls -la ${target_base}/"
