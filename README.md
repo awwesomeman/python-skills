@@ -72,9 +72,11 @@ curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remo
 curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --local
 ```
 
-> Fork 使用者可透過環境變數指定自己的 repo：`GITHUB_REPO=user/repo curl -fsSL <url> | bash`
+> **進階設定**：Fork 使用者可透過環境變數指定自己的 repo：`GITHUB_REPO=user/repo curl -fsSL <url> | bash`
 >
-> 遠端安裝自動使用 `--copy` 模式（複製檔案），因此更新技能內容後需重新執行安裝指令。
+> **更新注意**：遠端安裝自動使用 `--copy` 模式（複製檔案），因此更新技能內容後需重新執行安裝指令。
+>
+> **參數陷阱**：使用 `curl | bash` 傳遞參數（如 `--local` 或指定 `"claude"`）給腳本時，**務必加上 `-s --` 作為分隔**。如果不加直接寫成 `| bash "claude"`，Bash 會將系統上的 `claude` 工具當成腳本讀取，導致出現 `syntax error near unexpected token` 這種誤報！
 
 ---
 
@@ -96,6 +98,7 @@ python-skills/
 ├── install.sh                        # 安裝腳本（symlink 或 copy）
 ├── uninstall.sh                      # 移除腳本（自動偵測 symlink 與 copy）
 ├── remote-install.sh                 # 遠端安裝腳本（免 clone，curl | bash）
+├── remote-uninstall.sh               # 遠端移除腳本（免 clone，curl | bash）
 └── README.md
 ```
 
@@ -172,6 +175,18 @@ bash uninstall.sh --skills "quant"
 
 # 解除本地路徑的安裝
 bash uninstall.sh --local
+```
+
+### 遠端解除安裝（免 Clone）
+
+如果你是透過 `remote-install.sh` 安裝而沒有 clone 整個專案，你可以使用以下的指令來進行安全的反安裝：
+
+```bash
+# 解除所有偵測到的 AI 工具中的技能
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash
+
+# 只解除安裝本地路徑的技能
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash -s -- --local
 ```
 
 會自動辨識並移除 symlink 與複製模式的安裝，不會動到本專案的任何源文件。
