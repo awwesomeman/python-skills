@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh — Remove all symlinks created by install.sh.
+# uninstall.sh — Remove symlinks and copied skills created by install.sh.
 # Usage: bash uninstall.sh [--local] [--skills "git,python,quant"] [AI_TOOLS...]
 # Does NOT delete source files in this repository.
 set -euo pipefail
@@ -15,17 +15,20 @@ NC='\033[0m'
 # shellcheck source=_config.sh
 source "$REPO_ROOT/_config.sh"
 
-remove_symlink() {
+remove_skill() {
   local path="$1"
   if [ -L "$path" ]; then
     rm "$path"
-    echo -e "${GREEN}Removed: $path${NC}"
+    echo -e "${GREEN}Removed symlink: $path${NC}"
+  elif [ -d "$path" ] && [ -f "$path/.installed-by-python-skills" ]; then
+    rm -rf "$path"
+    echo -e "${GREEN}Removed copied skill: $path${NC}"
   elif [ -e "$path" ]; then
-    echo -e "${RED}Not a symlink, skipping: $path${NC}"
+    echo -e "${RED}Not managed by python-skills, skipping: $path${NC}"
   fi
 }
 
-echo "Dynamically uninstalling skills symlinks..."
+echo "Dynamically uninstalling skills..."
 echo ""
 
 # Parse arguments
@@ -147,7 +150,7 @@ for i in "${TARGET_INDICES[@]}"; do
 
   for skill in "${SKILLS[@]}"; do
     target_path="$target_base/$skill"
-    remove_symlink "$target_path"
+    remove_skill "$target_path"
 
     # Clean up empty parent directories (e.g. if ~/.cursor/skills/git is empty after removal)
     parent_dir="$(dirname "$target_path")"

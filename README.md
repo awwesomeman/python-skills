@@ -24,7 +24,8 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 | 參數 | 縮寫 | 說明 | 預設 |
 |------|------|------|------|
 | `--skills <list>` | `-s` | 指定要安裝的技能分類，逗號分隔，支援前綴比對 | 全部技能 |
-| `--local` | `-l` | 安裝到當前目錄的本地路徑（如 `.cursor/skills/`），而非全域路徑 | 全域路徑 |
+| `--local` | `-l` | 將技能安裝到「執行這行指令所在的目錄」內（如專案根目錄下的 `.cursor/skills/` 等），而非全域安裝 | 全域路徑 |
+| `--copy` | `-c` | 複製實際檔案取代 symlink，適用於無法保留 clone 的情境 | symlink |
 | `[AI_TOOLS...]` | — | 指定目標 AI 工具（位置參數，可多個） | 自動偵測已安裝的工具 |
 
 支援的 AI 工具名稱：`antigravity`, `claude`, `codex`, `cursor`, `gemini`, `copilot`, `opencode`, `windsurf`, `openclaw`。
@@ -44,14 +45,36 @@ bash install.sh cursor gemini
 # 組合：只將 python 和 git 技能安裝到 cursor
 bash install.sh --skills "python,git" cursor
 
-# 安裝到當前專案的本地路徑
+# 將技能安裝到「執行這行指令所在的目錄」內（如你的專案根目錄）
 bash install.sh --local
 
 # 完整組合：只將 python 技能安裝到 cursor 的本地路徑
 bash install.sh --local --skills "python" cursor
+
+# 複製模式：複製實際檔案而非建立 symlink
+bash install.sh --copy cursor
 ```
 
-> ⚠️ 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。
+> ⚠️ 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。`uninstall.sh` 能自動辨識 symlink 與複製模式的安裝，使用相同指令即可解除兩種安裝。
+
+### 遠端安裝（免 Clone）
+
+不需要 clone 專案即可安裝，使用 `curl` 單行指令（自動使用 `--copy` 模式）：
+
+```bash
+# 安裝所有技能到所有偵測到的 AI 工具
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash
+
+# 只安裝 python 和 git 技能到 cursor
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --skills "python,git" cursor
+
+# 將技能安裝到「執行這行指令所在的目錄」內（如你的專案根目錄）
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --local
+```
+
+> Fork 使用者可透過環境變數指定自己的 repo：`GITHUB_REPO=user/repo curl -fsSL <url> | bash`
+>
+> 遠端安裝自動使用 `--copy` 模式（複製檔案），因此更新技能內容後需重新執行安裝指令。
 
 ---
 
@@ -70,8 +93,9 @@ python-skills/
 │       ├── [技能名稱]/
 │       │   ├── SKILL.md              # 主文件（必要存在，AI 載入點）
 │       │   └── (其他關聯參考文件)
-├── install.sh                        # 安裝腳本（建立 symlink）
-├── uninstall.sh                      # 移除腳本（清除 symlink 與空資料夾）
+├── install.sh                        # 安裝腳本（symlink 或 copy）
+├── uninstall.sh                      # 移除腳本（自動偵測 symlink 與 copy）
+├── remote-install.sh                 # 遠端安裝腳本（免 clone，curl | bash）
 └── README.md
 ```
 
@@ -131,9 +155,9 @@ python-skills/
 
 ## 更新技巧
 
-修改任何 `SKILL.md` 後，**不需要重新執行 `install.sh`**——symlink 指向的是目錄，源文件更新後所有 Agent 裡的設定會即時生效。
+使用 **symlink 模式**（預設）修改任何 `SKILL.md` 後，**不需要重新執行 `install.sh`**——symlink 指向的是目錄，源文件更新後所有 Agent 裡的設定會即時生效。只有在**新增或刪除 skill 目錄**時才需要重新執行 `install.sh`。
 
-只有在**新增或刪除 skill 目錄**時才需要重新執行 `install.sh`。
+使用 **`--copy` 模式或遠端安裝**的使用者，更新技能內容後需要**重新執行安裝指令**，因為檔案是獨立副本，不會自動同步。
 
 ---
 
@@ -150,4 +174,4 @@ bash uninstall.sh --skills "quant"
 bash uninstall.sh --local
 ```
 
-只會移除 symlink，不會動到本專案的任何源文件。
+會自動辨識並移除 symlink 與複製模式的安裝，不會動到本專案的任何源文件。

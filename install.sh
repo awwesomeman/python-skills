@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# install.sh — Install skills to AI agent skill directories via symlinks.
-# Usage: bash install.sh [--local] [--skills "git,python,quant"] [AI_TOOLS...]
-# Re-run anytime skills are added/renamed to refresh symlinks.
+# install.sh — Install skills to AI agent skill directories via symlinks or copy.
+# Usage: bash install.sh [--local] [--copy] [--skills "git,python,quant"] [AI_TOOLS...]
+# Re-run anytime skills are added/renamed to refresh symlinks or copies.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -26,22 +26,56 @@ install_skill() {
 
   mkdir -p "$(dirname "$target_path")"
 
-  # Remove existing symlink or warn if real directory
+  # Remove existing symlink or handle real directory/file
   if [ -L "$target_path" ]; then
     rm "$target_path"
-  elif [ -e "$target_path" ]; then
-    local res_target="$(cd -P "$target_path" 2>/dev/null && pwd || true)"
-    local res_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
-    if [ -n "$res_target" ] && [ "$res_target" = "$res_source" ]; then
-      echo -e "${GREEN}[OK] $skill_name (covered by parent symlink)${NC}"
+  elif [ -d "$target_path" ]; then
+    if [ -f "$target_path/.installed-by-python-skills" ]; then
+      # Previously installed via --copy, safe to replace regardless of current mode
+      rm -rf "$target_path"
+    elif [ "$USE_COPY" = true ]; then
+      local check_path="$target_path"
+      local is_covered=false
+      while [ "$check_path" != "/" ] && [ -n "$check_path" ]; do
+        check_path="$(dirname "$check_path")"
+        if [ -f "$check_path/.installed-by-python-skills" ]; then
+          is_covered=true
+          break
+        fi
+      done
+      
+      if [ "$is_covered" = true ]; then
+        echo -e "${GREEN}[OK] $skill_name (covered by parent copy)${NC}"
+        return
+      fi
+
+      echo -e "${YELLOW}[WARN] $target_path exists and is not managed by python-skills -- skipping${NC}"
+      return
+    else
+      local res_target="$(cd -P "$target_path" 2>/dev/null && pwd || true)"
+      local res_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
+      if [ -n "$res_target" ] && [ "$res_target" = "$res_source" ]; then
+        echo -e "${GREEN}[OK] $skill_name (covered by parent symlink)${NC}"
+        return
+      fi
+      echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite${NC}"
       return
     fi
-    echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite${NC}"
+  elif [ -e "$target_path" ]; then
+    echo -e "${YELLOW}[WARN] $target_path exists as a file (expected directory) -- skipping${NC}"
     return
   fi
 
-  ln -s "$source_path" "$target_path"
-  echo -e "${GREEN}[OK] $skill_name${NC}"
+  if [ "$USE_COPY" = true ]; then
+    cp -r "$source_path" "$target_path"
+    # Exclude .git directory to avoid nested repository issues
+    rm -rf "$target_path/.git" 2>/dev/null || true
+    echo "copy" > "$target_path/.installed-by-python-skills"
+    echo -e "${GREEN}[OK] $skill_name (copied)${NC}"
+  else
+    ln -s "$source_path" "$target_path"
+    echo -e "${GREEN}[OK] $skill_name${NC}"
+  fi
 }
 
 echo "Dynamically installing skills..."
@@ -51,11 +85,16 @@ echo ""
 SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
 USE_LOCAL=false
+USE_COPY=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -l|--local)
       USE_LOCAL=true
+      shift
+      ;;
+    -c|--copy)
+      USE_COPY=true
       shift
       ;;
     -s|--skills)
@@ -171,6 +210,10 @@ for i in "${TARGET_INDICES[@]}"; do
   echo ""
 done
 
-echo "Done. All symlinks installed."
+if [ "$USE_COPY" = true ]; then
+  echo "Done. All skills copied."
+else
+  echo "Done. All symlinks installed."
+fi
 echo ""
 echo "To verify: ls -la ${target_base}/"
