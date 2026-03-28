@@ -72,7 +72,7 @@ pipeline_layer: "Risk Layer (Pandas/NumPy)"
 
 🚨 風險平價只考慮風險分散不考慮收益，低波動資產權重可能 60%+，需搭配槓桿達到目標報酬。
 
-MRC_i = (Σw)_i / σ_p，RC_i = w_i × MRC_i。最佳化目標：最小化各資產 RC_i 的方差。
+MRC_i = (Cov × w)_i / σ_p，RC_i = w_i × MRC_i。最佳化目標：最小化各資產 RC_i 的方差。
 
 ---
 

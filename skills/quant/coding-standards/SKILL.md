@@ -60,7 +60,7 @@ df.groupby("asset_id")["close"].shift(1)
 
 - **Walk-Forward**：Rolling 或 Anchored expanding window，逐步滑動 train/test。train_window 太短 → 欠擬合；太長 → 包含過時 regime。test_window 必須 ≥ 持倉期。
 - **Purged K-Fold (de Prado, 2018)**：從訓練集末端移除 forward return 窗口長度的天數 (purge)，測試集結束後額外排除一段 embargo 天數，防止自相關洩漏。purge_days 必須 ≥ forward return 計算天數。
-- **CPCV**：終極版，從 N 個 group 中取 k 個作為測試集的所有組合，全做 purging + embargo，可建構完整 OOS 績效路徑。
+- **CPCV (Combinatorial Purged Cross-Validation)**：終極版，從 N 個 group 中取 k 個作為測試集的所有組合，全做 purging + embargo，可建構完整 OOS 績效路徑。
 
 ---
 
