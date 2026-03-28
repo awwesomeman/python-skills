@@ -1,6 +1,8 @@
-"""非同步程式設計模式範例
+"""
+examples/async_patterns.py
 
-展示 Python asyncio 的最佳實踐。
+非同步程式設計模式：gather 並行、Semaphore 限流、超時控制、生產者-消費者。
+輸入層：外部 API / 任務佇列；輸出層：聚合結果。
 """
 
 import asyncio
@@ -86,6 +88,7 @@ async def fetch_many_with_limit(
     max_concurrent: int = 10
 ) -> list[dict]:
     """限制並發數量，避免壓垮目標服務。"""
+    # WHY: 無限並發會耗盡 fd / 觸發上游 rate limit，Semaphore 將同時連線數控制在安全範圍
     semaphore = asyncio.Semaphore(max_concurrent)
 
     async def fetch_with_semaphore(url: str) -> dict:

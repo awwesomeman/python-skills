@@ -1,6 +1,8 @@
-"""Logger 使用模式範例
+"""
+examples/usage_patterns.py
 
-這個範例展示在應用程式各模組中使用 logger 的最佳實踐。
+Logger 使用模式：log level 選擇、結構化 log、例外處理、常見錯誤。
+輸入層：應用程式各模組的業務邏輯；輸出層：透過 logger 輸出到 root handler。
 """
 
 import logging

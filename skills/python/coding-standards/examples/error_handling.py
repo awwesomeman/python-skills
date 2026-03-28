@@ -1,6 +1,8 @@
-"""錯誤處理模式範例
+"""
+examples/error_handling.py
 
-展示 Python 錯誤處理的最佳實踐。
+錯誤處理模式：特定例外捕獲、自訂例外、重試退避、交易管理、early return。
+輸入層：外部 API / 使用者請求；輸出層：領域例外 → 呼叫端處理。
 """
 
 import asyncio
@@ -152,7 +154,7 @@ async def retry_with_backoff(
                 logger.error("所有重試都失敗 (%d 次嘗試)", max_retries + 1)
                 raise
 
-            # 計算指數退避延遲
+            # WHY: 指數退避避免在上游服務過載時持續衝擊，max_delay 防止間隔無限增長
             delay = min(base_delay * (2 ** attempt), max_delay)
             logger.warning(
                 "操作失敗，%.1f 秒後重試 (嘗試 %d/%d)",

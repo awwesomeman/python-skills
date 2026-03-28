@@ -1,6 +1,8 @@
-"""API 設計模式範例
+"""
+examples/api_design.py
 
-展示 FastAPI 的最佳實踐。
+FastAPI 端點設計：統一回應格式、Request/Response 分離、依賴注入、錯誤處理。
+輸入層：HTTP 請求（FastAPI Router）；輸出層：UserService → UserRepository。
 """
 
 import logging
@@ -8,8 +10,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Any, Generic, TypeVar
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -286,10 +289,6 @@ async def delete_user(
 # 錯誤處理中間件
 # ============================================================================
 
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-
-
 def create_app() -> FastAPI:
     """建立 FastAPI 應用。"""
     app = FastAPI(
@@ -298,7 +297,7 @@ def create_app() -> FastAPI:
         description="使用者管理 API",
     )
 
-    # 全域例外處理
+    # WHY: 全域攔截確保所有錯誤都返回統一的 ApiResponse 格式，前端只需處理一種結構
     @app.exception_handler(HTTPException)
     async def http_exception_handler(
         request: Request,
@@ -328,9 +327,6 @@ def create_app() -> FastAPI:
 # ============================================================================
 # 輸入驗證範例
 # ============================================================================
-
-from pydantic import field_validator
-
 
 class CreateOrderRequest(BaseModel):
     """建立訂單請求（含複雜驗證）。"""

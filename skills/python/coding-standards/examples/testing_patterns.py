@@ -1,13 +1,16 @@
-"""測試模式範例
+"""
+examples/testing_patterns.py
 
-展示 pytest 測試的最佳實踐。
+pytest 測試模式：fixtures、AAA、參數化、mock。
+輸入層：被測試的 Service/Repository；輸出層：測試結果（assert）。
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
 
@@ -40,7 +43,7 @@ class UserService:
             raise ValueError("Email 已存在")
 
         user = User(
-            id=f"user_{datetime.now().timestamp()}",
+            id=f"user_{datetime.now(timezone.utc).timestamp()}",
             email=email,
             name=name,
         )
@@ -254,7 +257,6 @@ def test_divide_success() -> None:
 
 async def fetch_user_from_api(user_id: str) -> dict:
     """從 API 取得使用者（需要 mock）。"""
-    import httpx
     async with httpx.AsyncClient() as client:
         response = await client.get(f"https://api.example.com/users/{user_id}")
         return response.json()
@@ -288,6 +290,7 @@ async def test_fetch_user_from_api() -> None:
 # Fixture Scope：控制 Fixture 生命週期
 # ============================================================================
 
+# WHY: scope="module" 讓 DB 連線只建立一次，避免每個測試重建連線拖慢整個 suite
 @pytest.fixture(scope="module")
 def expensive_resource() -> Generator[str, None, None]:
     """模組級別的 fixture（整個模組只建立一次）。"""

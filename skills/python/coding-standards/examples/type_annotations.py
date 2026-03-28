@@ -1,6 +1,8 @@
-"""型別標註與資料模型範例
+"""
+examples/type_annotations.py
 
-展示 Python 型別系統的最佳實踐。
+型別標註與資料模型：基本標註、Enum、dataclass、Pydantic、Generic、Protocol、Literal。
+輸入層：函式參數 / API 請求；輸出層：強型別回傳值 / 驗證後的資料模型。
 """
 
 from dataclasses import dataclass, field
@@ -208,6 +210,7 @@ class Config:
 # Type Alias：型別別名
 # ============================================================================
 
+# WHY: NewType 讓 mypy 區分 UserId 和 MarketId，防止將市場 ID 誤傳入使用者 API
 UserId = NewType("UserId", str)
 MarketId = NewType("MarketId", str)
 
