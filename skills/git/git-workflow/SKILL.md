@@ -88,3 +88,13 @@ Commit 訊息須遵循 Conventional Commits 規範。詳細格式與範例請參
 - 使用 `.gitignore` 排除敏感檔案
 - 不要提交大型二進位檔案（使用 Git LFS）
 - 不要提交 IDE 設定檔（`.idea/`、`.vscode/`）
+
+## 提交前檢查清單
+
+> 在執行 `git commit` 或 `git push` 前，逐項核對以下清單。未通過則不得執行。
+
+- [ ] 分支名稱符合 `<type>/<description>` 格式？
+- [ ] Commit 訊息遵循 Conventional Commits 規範？
+- [ ] 沒有敏感資訊（.env、credentials）被提交？
+- [ ] PR 標題 < 70 字元且遵循 Conventional Commits 格式？
+- [ ] 未使用禁止操作（force push、--no-verify）？
