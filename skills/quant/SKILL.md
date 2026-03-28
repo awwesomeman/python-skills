@@ -26,15 +26,15 @@ data-preprocessing → strategy-construction → risk-management → execution-s
 
 ## 任務路由
 
-判斷任務類型後，**直接讀取**對應子目錄的 SKILL.md 並依照規範執行，不需要詢問使用者確認。
+判斷任務類型後，以**本檔案所在目錄**為基準，**直接讀取**對應子目錄的 SKILL.md 並依照規範執行，不需要詢問使用者確認。若父層與子層規則衝突，以子層為準。
 
-| 任務 | 載入的 Skill |
-|------|-------------|
-| 資料清洗 / 特徵工程 | `data-preprocessing/SKILL.md` |
-| 因子研究（IC、分組測試） | `data-preprocessing/SKILL.md` + `performance-evaluation/SKILL.md` + `multiple-testing/SKILL.md` |
+| 任務 | 載入的 Skill（相對於本目錄） |
+|------|------|
+| 資料清洗 / 特徵工程 | [data-preprocessing/SKILL.md](./data-preprocessing/SKILL.md) |
+| 因子研究（IC、分組測試） | [data-preprocessing/SKILL.md](./data-preprocessing/SKILL.md) + [performance-evaluation/SKILL.md](./performance-evaluation/SKILL.md) + [multiple-testing/SKILL.md](./multiple-testing/SKILL.md) |
 | 截面選股策略開發 | 全部（沿 pipeline 流向） |
 | 其他策略類型（單資產 / CTA / 配對交易等） | 全部（沿 pipeline 流向，跳過截面策略章節） |
-| 策略穩健性檢驗 | `performance-evaluation/SKILL.md` + `regime-analysis/SKILL.md` + `multiple-testing/SKILL.md` |
+| 策略穩健性檢驗 | [performance-evaluation/SKILL.md](./performance-evaluation/SKILL.md) + [regime-analysis/SKILL.md](./regime-analysis/SKILL.md) + [multiple-testing/SKILL.md](./multiple-testing/SKILL.md) |
 
 ## Skill 簡表
 
