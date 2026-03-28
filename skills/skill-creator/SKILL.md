@@ -67,7 +67,7 @@ domain/
 |------|------|------|
 | **指令句** | 「直接讀取...不需要詢問使用者確認」 | 沒有明確指令時 agent 會反問而非行動 |
 | **路徑基準** | 「以本檔案所在目錄為基準」 | 防止 agent 用使用者 CWD 拼出錯誤路徑 |
-| **Markdown 連結** | `[x/SKILL.md](./x/SKILL.md)` | 讓 parser 建立檔案依賴圖，比 backtick 更語意化 |
+| **相對 Markdown 連結** | `[x/SKILL.md](./x/SKILL.md)`（禁止絕對路徑） | 讓 parser 建立依賴圖；絕對路徑會導致跨機器/CI 失效 |
 | **Override 聲明** | 「子層規則優先」 | 消除父子衝突時 agent 的幻覺風險 |
 
 ### 3.3 examples/ 目錄模式
