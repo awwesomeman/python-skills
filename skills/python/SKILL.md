@@ -11,11 +11,13 @@ description: Python 開發相關技能入口。當撰寫、審查、重構 Pytho
 
 ## 任務路由
 
+判斷任務類型後，**直接讀取**對應子目錄的 SKILL.md 並依照規範執行，不需要詢問使用者確認。
+
 | 任務 | 載入的 Skill |
 |------|-------------|
-| 撰寫 / 審查 / 重構 Python 程式碼 | coding-standards |
-| 設定 logging / 建立 logger | logging |
-| 新專案建置 | coding-standards + logging |
+| 撰寫 / 審查 / 重構 Python 程式碼 | `coding-standards/SKILL.md` |
+| 設定 logging / 建立 logger | `logging/SKILL.md` |
+| 新專案建置 | `coding-standards/SKILL.md` + `logging/SKILL.md` |
 
 ## Skill 簡表
 
