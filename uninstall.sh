@@ -20,7 +20,9 @@ confirm_force_remove() {
   if [ "$ASSUME_YES" = true ]; then
     return 0
   fi
-  if [ ! -e /dev/tty ]; then
+  # /dev/tty 的設備節點幾乎永遠存在，-e 不代表真的有可用的控制終端
+  # （cron/systemd/ssh -T 等情境會 open 失敗）。實測可讀性才準確。
+  if ! { : < /dev/tty; } 2>/dev/null; then
     echo -e "${RED}[ABORT] --force on unmanaged path requires a TTY for confirmation: $path${NC}"
     echo -e "${RED}        Re-run with --yes to skip interactive confirmation (dangerous).${NC}"
     return 1
@@ -33,6 +35,21 @@ confirm_force_remove() {
 
 remove_skill() {
   local path="$1"
+  local source_path="$2"
+
+  # Safety: 當 target 是「真實目錄」(非 symlink) 且其絕對路徑等於 source 時才保護。
+  # symlink 要允許移除（否則 install 出來的 symlink 無法被卸載），
+  # 因此必須排除 -L；-L 判斷要先於 -d 以免被 symlink-to-dir 誤判。
+  if [ -n "$source_path" ] && [ ! -L "$path" ] && [ -d "$path" ] && [ -d "$source_path" ]; then
+    local real_source real_target
+    real_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
+    real_target="$(cd -P "$path" 2>/dev/null && pwd || true)"
+    if [ -n "$real_source" ] && [ "$real_source" = "$real_target" ]; then
+      echo -e "${YELLOW}[SKIP] 目標等於來源，拒絕刪除: $path${NC}"
+      return
+    fi
+  fi
+
   if [ -L "$path" ]; then
     rm "$path"
     echo -e "${GREEN}Removed symlink: $path${NC}"
@@ -141,21 +158,28 @@ TARGET_INDICES=()
 
 if [ -n "$CUSTOM_TARGET_DIR" ]; then
   # --target overrides both auto-detection and --local: remove from a single custom dir.
+  if [ "$USE_LOCAL" = true ]; then
+    echo -e "${YELLOW}[WARN] --target 會覆蓋 --local，以 --target 為準${NC}"
+  fi
+  if [ ${#EXPLICIT_TARGETS[@]} -gt 0 ]; then
+    echo -e "${YELLOW}[WARN] --target 會忽略位置參數 AI_TOOLS: ${EXPLICIT_TARGETS[*]}${NC}"
+  fi
   echo "Custom target directory specified: $CUSTOM_TARGET_DIR"
   TARGET_INDICES+=("manual")
 elif [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
   echo "No explicit targets provided. Auto-detecting installed AI tools..."
   for i in "${!AI_TOOLS_NAMES[@]}"; do
     if [ "$USE_LOCAL" = true ]; then
-      local_dir="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}"
-      if [ -d "$local_dir" ]; then
+      local_base="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}"
+      local_target="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]}"
+      if [ -d "$local_base" ]; then
         TARGET_INDICES+=("$i")
-        echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} ($local_dir)"
+        echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} ($local_target)"
       fi
     else
       if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
         TARGET_INDICES+=("$i")
-        echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
+        echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_PATHS[$i]})"
       fi
     fi
   done
@@ -209,7 +233,7 @@ for i in "${TARGET_INDICES[@]}"; do
 
   for skill in "${SKILLS[@]}"; do
     target_path="$target_base/$skill"
-    remove_skill "$target_path"
+    remove_skill "$target_path" "$REPO_ROOT/skills/$skill"
 
     # Clean up empty parent directories (e.g. if ~/.cursor/skills/git is empty after removal)
     parent_dir="$(dirname "$target_path")"

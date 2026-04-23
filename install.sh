@@ -182,21 +182,30 @@ TARGET_INDICES=()
 
 if [ -n "$CUSTOM_TARGET_DIR" ]; then
   # --target overrides both auto-detection and --local: install into a single custom dir.
+  if [ "$USE_LOCAL" = true ]; then
+    echo -e "${YELLOW}[WARN] --target 會覆蓋 --local，以 --target 為準${NC}"
+  fi
+  if [ ${#EXPLICIT_TARGETS[@]} -gt 0 ]; then
+    echo -e "${YELLOW}[WARN] --target 會忽略位置參數 AI_TOOLS: ${EXPLICIT_TARGETS[*]}${NC}"
+  fi
   echo "Custom target directory specified: $CUSTOM_TARGET_DIR"
   TARGET_INDICES+=("manual")
 elif [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
   echo "No explicit targets provided. Auto-detecting installed AI tools..."
   for i in "${!AI_TOOLS_NAMES[@]}"; do
     if [ "$USE_LOCAL" = true ]; then
-      local_dir="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}"
-      if [ -d "$local_dir" ]; then
+      # 偵測用基底 (e.g. .cursor) 存在即視為此工具在本專案有在用；
+      # 顯示的是真正會被寫入的 skills 目錄路徑，避免訊息與實際操作目標不一致。
+      local_base="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}"
+      local_target="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]}"
+      if [ -d "$local_base" ]; then
         TARGET_INDICES+=("$i")
-        echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} ($local_dir)"
+        echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} ($local_target)"
       fi
     else
       if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
         TARGET_INDICES+=("$i")
-        echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
+        echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_PATHS[$i]})"
       fi
     fi
   done
