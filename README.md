@@ -26,7 +26,7 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 | `--skills <list>` | `-s` | 指定要安裝的技能分類，逗號分隔，支援前綴比對 | 全部技能 |
 | `--local` | `-l` | 將技能安裝到「執行這行指令所在的目錄」內（如專案根目錄下的 `.cursor/skills/` 等），而非全域安裝 | 全域路徑 |
 | `--copy` | `-c` | 複製實際檔案取代 symlink，適用於無法保留 clone 的情境 | symlink |
-| `--force` | `-f` | 強制覆蓋任何既有目錄（含非本工具管理者，謹慎使用） | 略過 |
+| `--force` | `-f` | `install`：強制覆蓋既有目錄；`uninstall`：強制移除非本工具管理路徑（預設 TTY 互動確認） | 略過 |
 | `--target <dir>` | `-p` | 指定自定義目標安裝目錄（覆蓋預設路徑） | 自動偵測 |
 | `--yes` | `-y` | （僅 `uninstall.sh`）搭配 `--force` 跳過互動確認，適用於 pipe/非互動情境 | 需互動確認 |
 | `[AI_TOOLS...]` | — | 指定目標 AI 工具（位置參數，可多個） | 自動偵測已安裝的工具 |
@@ -35,77 +35,31 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 
 ### 調用語法對照表
 
-| 需求場景 | 地端安裝 (`install.sh`) | 遠端安裝 (`remote-install.sh`) |
-| :--- | :--- | :--- |
-| **基本全域安裝** | `bash install.sh` | `curl ... \| bash` |
-| **指定特定工具** | `bash install.sh cursor` | `curl ... \| bash -s -- cursor` |
-| **安裝特定技能** | `bash install.sh -s "python"` | `curl ... \| bash -s -- -s "python"` |
-| **安裝至本地專案** | `bash install.sh --local` | `curl ... \| bash -s -- --local` |
-| **強制覆蓋既有項** | `bash install.sh --force` | `curl ... \| bash -s -- --force` |
-| **強制移除既有項** | `bash uninstall.sh --force` | `curl ... \| bash -s -- --force` |
-| **自定義安裝路徑** | `bash install.sh --target "/my/path"` | `curl ... \| bash -s -- --target "/my/path"` |
-| **組合多個參數** | `bash install.sh -f -s "git" cursor` | `curl ... \| bash -s -- -f -s "git" cursor` |
+遠端指令格式（四個「遠端」欄位共用，表格內只列 `-s --` 之後要傳的參數）：
 
-> **核心差異**：遠端安裝必須使用 `-s --` 作為參數引導符；且遠端安裝預設為 `--copy` 模式，地端則預設為 `symlink` 模式。
->
-> **`--force` 警告**：會 `rm -rf` 任何同名目錄（包含使用者自行放置、非本工具建立者）。`uninstall.sh --force` 預設會逐一透過 TTY 互動確認；在 `curl | bash` 等無 TTY 情境，請加 `--yes` 跳過確認（請在明確了解後果時才使用）。
+- 遠端 install：`curl -fsSL <BASE>/remote-install.sh | bash [-s -- <參數>]`
+- 遠端 uninstall：`curl -fsSL <BASE>/remote-uninstall.sh | bash [-s -- <參數>]`
+- `<BASE>` = `https://raw.githubusercontent.com/awwesomeman/python-skills/main`
+- `*` 代表無需額外參數（直接 `| bash`，不用 `-s --`）
 
-### 範例
+| 需求場景 | 地端 install | 遠端 install | 地端 uninstall | 遠端 uninstall |
+| :--- | :--- | :--- | :--- | :--- |
+| **基本（全域，全部技能）** | `bash install.sh` | `*` | `bash uninstall.sh` | `*` |
+| **指定 AI 工具** | `bash install.sh cursor` | `cursor` | `bash uninstall.sh cursor` | `cursor` |
+| **指定技能分類** | `bash install.sh -s "python,git"` | `-s "python,git"` | `bash uninstall.sh -s "quant"` | `-s "quant"` |
+| **本地專案路徑** | `bash install.sh --local` | `--local` | `bash uninstall.sh --local` | `--local` |
+| **自定義目標路徑** | `bash install.sh --target "/p"` | `--target "/p"` | `bash uninstall.sh --target "/p"` | `--target "/p"` |
+| **強制覆蓋／移除既有項** | `bash install.sh --force` | `--force` | `bash uninstall.sh --force` | `--force --yes` |
+| **複製模式（非 symlink）** | `bash install.sh --copy` | （遠端預設即 copy） | — | — |
+| **組合用例** | `bash install.sh -f -s "git" cursor` | `-f -s "git" cursor` | `bash uninstall.sh -s "git" cursor` | `-s "git" cursor` |
 
-```bash
-# 安裝所有技能到所有偵測到的 AI 工具（全域）
-bash install.sh
+**必讀注意**
 
-# 只安裝 python 和 git 相關技能
-bash install.sh --skills "python,git"
-
-# 明確指定只安裝到 cursor 和 gemini
-bash install.sh cursor gemini
-
-# 組合：只將 python 和 git 技能安裝到 cursor
-bash install.sh --skills "python,git" cursor
-
-# 將技能安裝到「執行這行指令所在的目錄」內（如你的專案根目錄）
-bash install.sh --local
-
-# 完整組合：只將 python 技能安裝到 cursor 的本地路徑
-bash install.sh --local --skills "python" cursor
-
-# 複製模式：複製實際檔案而非建立 symlink
-bash install.sh --copy cursor
-
-# 強制模式：覆蓋既有非管理資料夾
-bash install.sh --force --skills "python" cursor
-
-# 自定義路徑：將技能安裝到指定目錄
-bash install.sh --target ~/my-ai-skills
-```
-
-> 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。`uninstall.sh` 能自動辨識 symlink 與複製模式的安裝，使用相同指令即可解除兩種安裝。
-
-### 遠端安裝（免 Clone）
-
-不需要 clone 專案即可安裝，使用 `curl` 單行指令（自動使用 `--copy` 模式）：
-
-```bash
-# 安裝所有技能到所有偵測到的 AI 工具
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash
-
-# 只安裝 python 和 git 技能到 cursor
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --skills "python,git" cursor
-
-# 將技能安裝到「執行這行指令所在的目錄」內（如你的專案根目錄）
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --local
-
-# 強制覆蓋並安裝到特定工具
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --force cursor
-```
-
-> **進階設定**：Fork 使用者可透過環境變數指定自己的 repo：`GITHUB_REPO=user/repo curl -fsSL <url> | bash`
->
-> **更新注意**：遠端安裝自動使用 `--copy` 模式（複製檔案），因此更新技能內容後需重新執行安裝指令。
->
-> **參數陷阱**：使用 `curl | bash` 傳遞參數（如 `--local` 或指定 `"claude"`）給腳本時，**務必加上 `-s --` 作為分隔**。如果不加直接寫成 `| bash "claude"`，Bash 會將系統上的 `claude` 工具當成腳本讀取，導致出現 `syntax error near unexpected token` 這種誤報！
+- **`-s --` 分隔符**：`curl | bash` 傳參時必須使用 `-s --` 引導，否則 `| bash "claude"` 會被 Bash 當成要執行系統上的 `claude`，噴 `syntax error near unexpected token`。
+- **預設模式差異**：地端 install 預設 symlink、遠端 install 自動 `--copy`（因此遠端更新技能後需重跑）。uninstall 自動辨識兩種，無差異。
+- **`--force` 風險**：會 `rm -rf` 同名目錄（含非本工具建立者）。`uninstall --force` 預設走 TTY 互動確認；`curl | bash` 無 TTY，需再加 `--yes` 才會執行。
+- **參數覆蓋順序**：`--target` 同時蓋過 `--local` 與位置參數（腳本會印 `[WARN]`）。
+- **Fork 自用**：`GITHUB_REPO=user/repo curl -fsSL <BASE>/remote-install.sh | bash` 切換到自己的 repo。
 
 ---
 
@@ -195,33 +149,4 @@ python-skills/
 
 ## 解除安裝
 
-```bash
-# 全部解除安裝
-bash uninstall.sh
-
-# 只解除指定分類的安裝
-bash uninstall.sh --skills "quant"
-
-# 解除本地路徑的安裝
-bash uninstall.sh --local
-
-# 強制移除所有偵測到的技能（包含非管理資料夾）
-bash uninstall.sh --force
-```
-
-### 遠端解除安裝（免 Clone）
-
-如果你是透過 `remote-install.sh` 安裝而沒有 clone 整個專案，你可以使用以下的指令來進行安全的反安裝：
-
-```bash
-# 解除所有偵測到的 AI 工具中的技能
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash
-
-# 只解除安裝本地路徑的技能
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash -s -- --local
-
-# 強制移除所有偵測到的技能（含非管理路徑）— pipe 模式無 TTY，需加 --yes 跳過確認
-curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash -s -- --force --yes
-```
-
-會自動辨識並移除 symlink 與複製模式的安裝，不會動到本專案的任何源文件。
+指令參見上方 [調用語法對照表](#調用語法對照表) 的「地端 uninstall」／「遠端 uninstall」欄位。`uninstall.sh` / `remote-uninstall.sh` 會自動辨識 symlink 與 copy 兩種安裝，皆不會動到本專案的源文件。
