@@ -26,9 +26,27 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 | `--skills <list>` | `-s` | 指定要安裝的技能分類，逗號分隔，支援前綴比對 | 全部技能 |
 | `--local` | `-l` | 將技能安裝到「執行這行指令所在的目錄」內（如專案根目錄下的 `.cursor/skills/` 等），而非全域安裝 | 全域路徑 |
 | `--copy` | `-c` | 複製實際檔案取代 symlink，適用於無法保留 clone 的情境 | symlink |
+| `--force` | `-f` | 強制覆蓋任何既有目錄（含非本工具管理者，謹慎使用） | 略過 |
+| `--yes` | `-y` | （僅 `uninstall.sh`）搭配 `--force` 跳過互動確認，適用於 pipe/非互動情境 | 需互動確認 |
 | `[AI_TOOLS...]` | — | 指定目標 AI 工具（位置參數，可多個） | 自動偵測已安裝的工具 |
 
 支援的 AI 工具名稱：`antigravity`, `claude`, `codex`, `cursor`, `gemini`, `copilot`, `opencode`, `windsurf`, `openclaw`。
+
+### 調用語法對照表
+
+| 需求場景 | 地端安裝 (`install.sh`) | 遠端安裝 (`remote-install.sh`) |
+| :--- | :--- | :--- |
+| **基本全域安裝** | `bash install.sh` | `curl ... \| bash` |
+| **指定特定工具** | `bash install.sh cursor` | `curl ... \| bash -s -- cursor` |
+| **安裝特定技能** | `bash install.sh -s "python"` | `curl ... \| bash -s -- -s "python"` |
+| **安裝至本地專案** | `bash install.sh --local` | `curl ... \| bash -s -- --local` |
+| **強制覆蓋既有項** | `bash install.sh --force` | `curl ... \| bash -s -- --force` |
+| **強制移除既有項** | `bash uninstall.sh --force` | `curl ... \| bash -s -- --force` |
+| **組合多個參數** | `bash install.sh -f -s "git" cursor` | `curl ... \| bash -s -- -f -s "git" cursor` |
+
+> **核心差異**：遠端安裝必須使用 `-s --` 作為參數引導符；且遠端安裝預設為 `--copy` 模式，地端則預設為 `symlink` 模式。
+>
+> **`--force` 警告**：會 `rm -rf` 任何同名目錄（包含使用者自行放置、非本工具建立者）。`uninstall.sh --force` 預設會逐一透過 TTY 互動確認；在 `curl | bash` 等無 TTY 情境，請加 `--yes` 跳過確認（請在明確了解後果時才使用）。
 
 ### 範例
 
@@ -53,9 +71,12 @@ bash install.sh --local --skills "python" cursor
 
 # 複製模式：複製實際檔案而非建立 symlink
 bash install.sh --copy cursor
+
+# 強制模式：覆蓋既有非管理資料夾
+bash install.sh --force --skills "python" cursor
 ```
 
-> ⚠️ 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。`uninstall.sh` 能自動辨識 symlink 與複製模式的安裝，使用相同指令即可解除兩種安裝。
+> 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。`uninstall.sh` 能自動辨識 symlink 與複製模式的安裝，使用相同指令即可解除兩種安裝。
 
 ### 遠端安裝（免 Clone）
 
@@ -70,6 +91,9 @@ curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remo
 
 # 將技能安裝到「執行這行指令所在的目錄」內（如你的專案根目錄）
 curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --local
+
+# 強制覆蓋並安裝到特定工具
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-install.sh | bash -s -- --force cursor
 ```
 
 > **進階設定**：Fork 使用者可透過環境變數指定自己的 repo：`GITHUB_REPO=user/repo curl -fsSL <url> | bash`
@@ -175,6 +199,9 @@ bash uninstall.sh --skills "quant"
 
 # 解除本地路徑的安裝
 bash uninstall.sh --local
+
+# 強制移除所有偵測到的技能（包含非管理資料夾）
+bash uninstall.sh --force
 ```
 
 ### 遠端解除安裝（免 Clone）
@@ -187,6 +214,9 @@ curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remo
 
 # 只解除安裝本地路徑的技能
 curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash -s -- --local
+
+# 強制移除所有偵測到的技能（含非管理路徑）— pipe 模式無 TTY，需加 --yes 跳過確認
+curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash -s -- --force --yes
 ```
 
 會自動辨識並移除 symlink 與複製模式的安裝，不會動到本專案的任何源文件。

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # install.sh — Install skills to AI agent skill directories via symlinks or copy.
-# Usage: bash install.sh [--local] [--copy] [--skills "git,python,quant"] [AI_TOOLS...]
+# Usage: bash install.sh [--local] [--copy] [--force] [--skills "git,python,quant"] [AI_TOOLS...]
 # Re-run anytime skills are added/renamed to refresh symlinks or copies.
 set -euo pipefail
 
@@ -30,10 +30,9 @@ install_skill() {
   if [ -L "$target_path" ]; then
     rm "$target_path"
   elif [ -d "$target_path" ]; then
-    if [ -f "$target_path/.installed-by-python-skills" ]; then
-      # Previously installed via --copy, safe to replace regardless of current mode
-      rm -rf "$target_path"
-    elif [ "$USE_COPY" = true ]; then
+    # Short-circuit: if parent is already managed (copy or symlink), treat as covered
+    # and do not touch the child -- even under --force -- to preserve the parent's integrity.
+    if [ "$USE_COPY" = true ]; then
       local check_path="$target_path"
       local is_covered=false
       while [ "$check_path" != "/" ] && [ -n "$check_path" ]; do
@@ -43,14 +42,10 @@ install_skill() {
           break
         fi
       done
-      
       if [ "$is_covered" = true ]; then
         echo -e "${GREEN}[OK] $skill_name (covered by parent copy)${NC}"
         return
       fi
-
-      echo -e "${YELLOW}[WARN] $target_path exists and is not managed by python-skills -- skipping${NC}"
-      return
     else
       local res_target="$(cd -P "$target_path" 2>/dev/null && pwd || true)"
       local res_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
@@ -58,7 +53,18 @@ install_skill() {
         echo -e "${GREEN}[OK] $skill_name (covered by parent symlink)${NC}"
         return
       fi
-      echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite${NC}"
+    fi
+
+    if [ -f "$target_path/.installed-by-python-skills" ] || [ "$USE_FORCE" = true ]; then
+      if [ "$USE_FORCE" = true ] && [ ! -f "$target_path/.installed-by-python-skills" ]; then
+        echo -e "${YELLOW}[INFO] Forcing overwrite of $target_path${NC}"
+      fi
+      rm -rf "$target_path"
+    elif [ "$USE_COPY" = true ]; then
+      echo -e "${YELLOW}[WARN] $target_path exists and is not managed by python-skills -- skipping (use --force to overwrite)${NC}"
+      return
+    else
+      echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite (use --force to overwrite)${NC}"
       return
     fi
   elif [ -e "$target_path" ]; then
@@ -86,6 +92,7 @@ SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
 USE_LOCAL=false
 USE_COPY=false
+USE_FORCE=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -95,6 +102,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c|--copy)
       USE_COPY=true
+      shift
+      ;;
+    -f|--force)
+      USE_FORCE=true
       shift
       ;;
     -s|--skills)

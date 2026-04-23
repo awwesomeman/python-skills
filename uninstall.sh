@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # uninstall.sh — Remove symlinks and copied skills created by install.sh.
-# Usage: bash uninstall.sh [--local] [--skills "git,python,quant"] [AI_TOOLS...]
+# Usage: bash uninstall.sh [--local] [--force] [--yes] [--skills "git,python,quant"] [AI_TOOLS...]
 # Does NOT delete source files in this repository.
 set -euo pipefail
 
@@ -15,6 +15,22 @@ NC='\033[0m'
 # shellcheck source=_config.sh
 source "$REPO_ROOT/_config.sh"
 
+confirm_force_remove() {
+  local path="$1"
+  if [ "$ASSUME_YES" = true ]; then
+    return 0
+  fi
+  if [ ! -e /dev/tty ]; then
+    echo -e "${RED}[ABORT] --force on unmanaged path requires a TTY for confirmation: $path${NC}"
+    echo -e "${RED}        Re-run with --yes to skip interactive confirmation (dangerous).${NC}"
+    return 1
+  fi
+  local reply=""
+  echo -e "${RED}[CONFIRM] About to rm -rf unmanaged path: $path${NC}" >&2
+  read -r -p "Type 'yes' to delete, anything else to skip: " reply < /dev/tty
+  [ "$reply" = "yes" ]
+}
+
 remove_skill() {
   local path="$1"
   if [ -L "$path" ]; then
@@ -24,7 +40,16 @@ remove_skill() {
     rm -rf "$path"
     echo -e "${GREEN}Removed copied skill: $path${NC}"
   elif [ -e "$path" ]; then
-    echo -e "${RED}Not managed by python-skills, skipping: $path${NC}"
+    if [ "$USE_FORCE" = true ]; then
+      if confirm_force_remove "$path"; then
+        rm -rf "$path"
+        echo -e "${YELLOW}[INFO] Forced removal of unmanaged path: $path${NC}"
+      else
+        echo -e "${YELLOW}[SKIP] Kept unmanaged path: $path${NC}"
+      fi
+    else
+      echo -e "${RED}Not managed by python-skills, skipping: $path (use --force to remove)${NC}"
+    fi
   fi
 }
 
@@ -35,11 +60,21 @@ echo ""
 SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
 USE_LOCAL=false
+USE_FORCE=false
+ASSUME_YES=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -l|--local)
       USE_LOCAL=true
+      shift
+      ;;
+    -f|--force)
+      USE_FORCE=true
+      shift
+      ;;
+    -y|--yes)
+      ASSUME_YES=true
       shift
       ;;
     -s|--skills)
