@@ -24,6 +24,16 @@ install_skill() {
     return
   fi
 
+  # Security check: skip if target is same as source to avoid self-deletion or circular links
+  local real_source="$(cd -P "$source_path" 2>/dev/null && pwd || true)"
+  local real_target_parent="$(cd -P "$(dirname "$target_path")" 2>/dev/null && pwd || true)"
+  local target_name="$(basename "$target_path")"
+  
+  if [ -n "$real_source" ] && [ "$real_source" = "$real_target_parent/$target_name" ]; then
+    echo -e "${YELLOW}[SKIP] 目標等於來源，略過: $target_path${NC}"
+    return
+  fi
+
   mkdir -p "$(dirname "$target_path")"
 
   # Remove existing symlink or handle real directory/file
