@@ -146,12 +146,17 @@ if [ -n "$CUSTOM_TARGET_DIR" ]; then
 elif [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
   echo "No explicit targets provided. Auto-detecting installed AI tools..."
   for i in "${!AI_TOOLS_NAMES[@]}"; do
-    if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
-      TARGET_INDICES+=("$i")
-      echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
-    elif [ "$USE_LOCAL" = true ] && [ -d "$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}" ]; then
-      TARGET_INDICES+=("$i")
-      echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_LOCAL_PATHS[$i]})"
+    if [ "$USE_LOCAL" = true ]; then
+      local_dir="$(pwd)/${AI_TOOLS_LOCAL_PATHS[$i]%/skills}"
+      if [ -d "$local_dir" ]; then
+        TARGET_INDICES+=("$i")
+        echo -e "${GREEN}Found (local): ${AI_TOOLS_NAMES[$i]}${NC} ($local_dir)"
+      fi
+    else
+      if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
+        TARGET_INDICES+=("$i")
+        echo -e "${GREEN}Found: ${AI_TOOLS_NAMES[$i]}${NC} (${AI_TOOLS_BASES[$i]})"
+      fi
     fi
   done
 else
