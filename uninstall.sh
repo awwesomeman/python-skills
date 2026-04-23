@@ -61,6 +61,7 @@ SELECTED_SKILLS=()
 EXPLICIT_TARGETS=()
 USE_LOCAL=false
 USE_FORCE=false
+CUSTOM_TARGET_DIR=""
 ASSUME_YES=false
 
 while [[ $# -gt 0 ]]; do
@@ -83,6 +84,15 @@ while [[ $# -gt 0 ]]; do
         shift 2
       else
         echo -e "${YELLOW}[ERROR] --skills requires a comma-separated list of skills${NC}"
+        exit 1
+      fi
+      ;;
+    -p|--target)
+      if [ -n "${2:-}" ]; then
+        CUSTOM_TARGET_DIR="$2"
+        shift 2
+      else
+        echo -e "${YELLOW}[ERROR] --target requires a directory path${NC}"
         exit 1
       fi
       ;;
@@ -129,7 +139,11 @@ fi
 # Determine which tools to uninstall from
 TARGET_INDICES=()
 
-if [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
+if [ -n "$CUSTOM_TARGET_DIR" ]; then
+  # --target overrides both auto-detection and --local: remove from a single custom dir.
+  echo "Custom target directory specified: $CUSTOM_TARGET_DIR"
+  TARGET_INDICES+=("manual")
+elif [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
   echo "No explicit targets provided. Auto-detecting installed AI tools..."
   for i in "${!AI_TOOLS_NAMES[@]}"; do
     if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
@@ -167,18 +181,23 @@ if [ ${#TARGET_INDICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-if [ "$USE_LOCAL" = true ]; then
+if [ "$USE_LOCAL" = true ] && [ -z "$CUSTOM_TARGET_DIR" ]; then
   UNINSTALL_ROOT="$(pwd)"
   echo -e "${BLUE}Removing from local paths under: $UNINSTALL_ROOT${NC}"
   echo ""
 fi
 
 for i in "${TARGET_INDICES[@]}"; do
-  tool="${AI_TOOLS_NAMES[$i]}"
-  if [ "$USE_LOCAL" = true ]; then
-    target_base="$UNINSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+  if [ "$i" = "manual" ]; then
+    tool="Manual"
+    target_base="$CUSTOM_TARGET_DIR"
   else
-    target_base="${AI_TOOLS_PATHS[$i]}"
+    tool="${AI_TOOLS_NAMES[$i]}"
+    if [ "$USE_LOCAL" = true ]; then
+      target_base="$UNINSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+    else
+      target_base="${AI_TOOLS_PATHS[$i]}"
+    fi
   fi
   echo -e "${BLUE}-- Removing from $tool --${NC}"
   echo "Target: $target_base"

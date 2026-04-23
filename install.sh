@@ -93,6 +93,7 @@ EXPLICIT_TARGETS=()
 USE_LOCAL=false
 USE_COPY=false
 USE_FORCE=false
+CUSTOM_TARGET_DIR=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -114,6 +115,15 @@ while [[ $# -gt 0 ]]; do
         shift 2
       else
         echo -e "${YELLOW}[ERROR] --skills requires a comma-separated list of skills${NC}"
+        exit 1
+      fi
+      ;;
+    -p|--target)
+      if [ -n "${2:-}" ]; then
+        CUSTOM_TARGET_DIR="$2"
+        shift 2
+      else
+        echo -e "${YELLOW}[ERROR] --target requires a directory path${NC}"
         exit 1
       fi
       ;;
@@ -160,7 +170,11 @@ fi
 # Determine target AI tools
 TARGET_INDICES=()
 
-if [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
+if [ -n "$CUSTOM_TARGET_DIR" ]; then
+  # --target overrides both auto-detection and --local: install into a single custom dir.
+  echo "Custom target directory specified: $CUSTOM_TARGET_DIR"
+  TARGET_INDICES+=("manual")
+elif [ ${#EXPLICIT_TARGETS[@]} -eq 0 ]; then
   echo "No explicit targets provided. Auto-detecting installed AI tools..."
   for i in "${!AI_TOOLS_NAMES[@]}"; do
     if [ -d "${AI_TOOLS_BASES[$i]}" ]; then
@@ -198,19 +212,26 @@ if [ ${#TARGET_INDICES[@]} -eq 0 ]; then
   exit 1
 fi
 
-if [ "$USE_LOCAL" = true ]; then
+if [ "$USE_LOCAL" = true ] && [ -z "$CUSTOM_TARGET_DIR" ]; then
   INSTALL_ROOT="$(pwd)"
   echo -e "${BLUE}Installing to local paths under: $INSTALL_ROOT${NC}"
   echo ""
 fi
 
+last_target_base=""
 for i in "${TARGET_INDICES[@]}"; do
-  tool="${AI_TOOLS_NAMES[$i]}"
-  if [ "$USE_LOCAL" = true ]; then
-    target_base="$INSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+  if [ "$i" = "manual" ]; then
+    tool="Manual"
+    target_base="$CUSTOM_TARGET_DIR"
   else
-    target_base="${AI_TOOLS_PATHS[$i]}"
+    tool="${AI_TOOLS_NAMES[$i]}"
+    if [ "$USE_LOCAL" = true ]; then
+      target_base="$INSTALL_ROOT/${AI_TOOLS_LOCAL_PATHS[$i]}"
+    else
+      target_base="${AI_TOOLS_PATHS[$i]}"
+    fi
   fi
+  last_target_base="$target_base"
   echo -e "${BLUE}-- $tool --${NC}"
   echo "Target: $target_base"
 
@@ -227,4 +248,4 @@ else
   echo "Done. All symlinks installed."
 fi
 echo ""
-echo "To verify: ls -la ${target_base}/"
+echo "To verify: ls -la ${last_target_base}/"

@@ -27,6 +27,7 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 | `--local` | `-l` | 將技能安裝到「執行這行指令所在的目錄」內（如專案根目錄下的 `.cursor/skills/` 等），而非全域安裝 | 全域路徑 |
 | `--copy` | `-c` | 複製實際檔案取代 symlink，適用於無法保留 clone 的情境 | symlink |
 | `--force` | `-f` | 強制覆蓋任何既有目錄（含非本工具管理者，謹慎使用） | 略過 |
+| `--target <dir>` | `-p` | 指定自定義目標安裝目錄（覆蓋預設路徑） | 自動偵測 |
 | `--yes` | `-y` | （僅 `uninstall.sh`）搭配 `--force` 跳過互動確認，適用於 pipe/非互動情境 | 需互動確認 |
 | `[AI_TOOLS...]` | — | 指定目標 AI 工具（位置參數，可多個） | 自動偵測已安裝的工具 |
 
@@ -42,6 +43,7 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 | **安裝至本地專案** | `bash install.sh --local` | `curl ... \| bash -s -- --local` |
 | **強制覆蓋既有項** | `bash install.sh --force` | `curl ... \| bash -s -- --force` |
 | **強制移除既有項** | `bash uninstall.sh --force` | `curl ... \| bash -s -- --force` |
+| **自定義安裝路徑** | `bash install.sh --target "/my/path"` | `curl ... \| bash -s -- --target "/my/path"` |
 | **組合多個參數** | `bash install.sh -f -s "git" cursor` | `curl ... \| bash -s -- -f -s "git" cursor` |
 
 > **核心差異**：遠端安裝必須使用 `-s --` 作為參數引導符；且遠端安裝預設為 `--copy` 模式，地端則預設為 `symlink` 模式。
@@ -74,6 +76,9 @@ bash install.sh --copy cursor
 
 # 強制模式：覆蓋既有非管理資料夾
 bash install.sh --force --skills "python" cursor
+
+# 自定義路徑：將技能安裝到指定目錄
+bash install.sh --target ~/my-ai-skills
 ```
 
 > 解除安裝 (`bash uninstall.sh`) 的用法與上述完全一致，也支援 `--local`、`--skills` 分類解除以及指定 AI 工具。`uninstall.sh` 能自動辨識 symlink 與複製模式的安裝，使用相同指令即可解除兩種安裝。
