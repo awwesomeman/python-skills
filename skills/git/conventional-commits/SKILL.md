@@ -58,6 +58,8 @@ git commit -s -m "<type>(<scope>): <description>"
 
 ### Body 草擬：先動機盤點、再段落歸屬
 
+> **本節為 dogfood-derived heuristic，非主流 style guide 內容**。兩階段自檢、`Also`/`Additionally` telltale、≤ 3 paragraphs 上限皆為本 skill 從失敗案例合成的 operational scaffolding，採信前請依專案 review 文化判斷。
+
 草擬階段走兩步自檢，避免動機混雜或段落跑錯家。
 
 **步驟 1：bullets-first 動機盤點。** 把 motivation / 取捨 / 副作用逐條列為 bullets，依關係決定最終形式：
