@@ -40,7 +40,9 @@
 
 ---
 
-## 2. PR 端寫 [Unreleased]（對應 SKILL.md §1）
+## 2. PR 端寫 [Unreleased]（對應 SKILL.md §1、§3.1）
+
+### 2.1 區塊模板
 
 每個 PR 在 merge 前，於 `CHANGELOG.md` 加：
 
@@ -48,19 +50,48 @@
 ## [Unreleased]
 
 ### Added
-- <new feature, 1-2 lines WHY>
+- <user-facing 變更> — <WHY / 影響>. (#PR)
 
 ### Changed
-- <behavior change, 1-2 lines WHY>
+- <behavior change> — <WHY>. (#PR)
 
 ### Fixed
-- <bug fix, 1-2 lines WHY>
+- <bug fix> — <觸發條件 or 修復後行為>. (#PR)
 
-### Migration
-- <if breaking, how downstream should adapt>
+### Removed
+- <breaking 變更>，改用 X / 將 Y 設為 Z. (#PR)
 ```
 
 PR merge 後到此為止，**不要執行 `cz bump`**。
+
+> 撰寫原則見 SKILL.md §3.1，本節只示範模板與反/正例對照。
+
+### 2.2 反例與正例對照
+
+**反例**（直貼 commit title、缺 WHY、缺 migration、列實作細節）：
+
+```markdown
+### Added
+- feat(introspect): SuggestConfigResult.detected
+- feat(introspect): add structured panel observations dict with 7 type-stable
+  keys including scope, signal, mode, n_assets, n_periods, sparsity, and
+  magnitude_dropped, plus 6 boundary tests in tests/test_introspection.py
+
+### Removed
+- BREAKING CHANGE: response format changed
+```
+
+**正例**（user 視角、有 WHY、有 migration、有連結）：
+
+```markdown
+### Added
+- expose `SuggestConfigResult.detected` dict — lets pipeline gates branch on
+  panel shape without parsing reasoning strings. (#20)
+
+### Removed
+- `analyze()` now returns an iterator instead of a list — wrap the call in
+  `list(...)` if you relied on indexing or `len()`. (#34)
+```
 
 ---
 

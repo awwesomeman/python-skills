@@ -79,6 +79,24 @@ Hybrid 拿 cz scaffold 當 safety net（catch missing entries），再手動補 
 - `feat!` / `BREAKING CHANGE:` 條目移到獨立的 `### Removed`，加 1 行 migration note
 - 每個 material entry 加 1-2 行 WHY context（motivation、citation、scope）
 
+### 3.1 Entry 撰寫原則
+
+> 目標：**簡單但保留追蹤所需的關鍵資訊**。讀者是「想升級這個版本卻不知會不會壞掉」的下游開發者。
+
+每個 entry 結構：`- <user-facing 變更> — <WHY / 影響>. (#PR)`
+
+| 規則 | 為什麼 |
+|------|--------|
+| user / API consumer 視角，非實作視角 | 下游 skim changelog 是為了判斷影響面，不是 review code |
+| Breaking / Removed entry 永遠附 migration note | 「改用 X」「將 Y 設為 Z」是升級時最常被搜尋的關鍵字 |
+| 不直貼 commit title、不列檔名/函式名/test 數量 | commit title 缺 WHY；實作細節屬 PR description |
+| 同模組多個 fix 合併為一條 | 避免 fragmentation；下游關心模組級影響 |
+| 動詞短語或陳述句皆可，不強制祈使句 | 對齊 [Keep a Changelog](https://keepachangelog.com/) 主流範例（"Added X" / "New visual identity" 混用） |
+| 連結用 **PR number** 而非 issue number（與 commit 標題的 `(#issue)` 不同） | PR 帶 diff、review、討論脈絡，是下游追問題的正確入口；issue 只描述需求，缺實作細節 |
+| Keep a Changelog 標準分類僅 `Added / Changed / Deprecated / Removed / Fixed / Security` | Migration 不是合法 section；migration note 寫進 `Removed` / `Changed` 條目本身 |
+
+模板與反例/正例對照見 [examples §2](./examples/changelog-workflow.md)。
+
 ### Don't
 
 - 跑完 `cz bump --changelog` 直接 push，跳過手動潤稿（會永久 ship bare scaffold）
