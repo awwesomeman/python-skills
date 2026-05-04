@@ -89,3 +89,105 @@ information lives, and the Refs/Closes split lacked a single source.
 ```
 
 bullet 退化成 diff 的文字版，失去 scope-level 摘要的意義。
+
+---
+
+## 反例：`Also` connective = 動機混雜的訊號
+
+當 prose body 必須用 `Also` / `Additionally` / `Separately` 把段落縫起來，多半意味動機本來就不共享 causal chain。應拆 commit 或重新組織敘事，不要靠連接詞遮蓋。
+
+### 反例（用 `Also` 把獨立動機強縫成 prose）
+
+```
+docs(conventional-commits): reground body rules
+
+Previous body rules cited "mainstream practice" — selective sampling.
+Reground the prose-default rule in the actual concern: bullets are
+a footgun for the WHAT-list failure mode this skill already forbids.
+
+Add a length-discipline rule on the same basis — first sentence in
+one line, ≤ 3 paragraphs — framed as scope self-check.
+
+Also fix line 26's internal contradiction (boundary "identical" yet
+needing bullets is self-defeating): reword to "same motivation,
+distinct sub-aspects".
+```
+
+問題：第三段 `Also fix line 26...` 是 telltale —— 前兩段共享 causal chain（同一個 reground 動機），第三段是另一條獨立關注（內部一致性），用 `Also` 強縫只是把問題藏起來。
+
+### 改寫一：把 line 26 修正當作同一 review pass 的延續，用 causal continuation
+
+```
+docs(conventional-commits): reground body rules in internal logic
+
+Earlier wording justified prose-default and length limits by appeal
+to "mainstream practice", which is selective sampling. Replace that
+justification with the actual concern: bullets are a footgun for
+the WHAT-list failure mode this skill already forbids, and oversized
+bodies are a scope smell rather than a word-count violation. The
+same review pass surfaces a downstream wording slip on the merge-
+case entry — "boundaries 完全相同" yet recommending bullets —
+reworded here to "same motivation, distinct sub-aspects".
+```
+
+`The same review pass surfaces...` 是 causal continuation，不是並列縫合 —— 措辭修正自然從前文的「重新審視論證」帶出。
+
+### 改寫二（如果 line 26 修正真的獨立到無法 causal continue）
+
+拆兩個 commit，不要硬縫。
+
+---
+
+## 反例：段落跑錯家（屬於 docstring / PR description）
+
+body 變長常因為段落該住在別的家。每段做歸屬自檢：未來讀 code 的人會去 docstring 還是 git log 找這資訊？
+
+### 反例（取捨段屬 docstring、計畫段屬 PR description）
+
+```
+feat(introspect): SuggestConfigResult.detected (#20)
+
+Surface the structured panel observations that drove a suggestion
+so AI agents and pipeline gates can branch programmatically. The
+information was already computed inside suggest_config and thrown
+away; consumers had to either parse the reasoning narrative
+strings or re-derive the observations from the raw panel.
+
+Why nan (not 0.0) for empty-panel sparsity: a zero-ratio is
+undefined when there are no observations. Reporting 0.0 would
+falsely imply 'fully dense' and consumers branching on
+sparsity == 0 would mis-classify empty input.
+
+The original #9 R6 sketch also proposed alternatives:
+list[AnalysisConfig]. Deferred — the semantics of 'neighbouring
+config' (axis-flip vs threshold-borderline vs domain-equivalent)
+are speculative without real user feedback.
+
+Refs #20
+```
+
+歸屬自檢：
+
+| 段 | 內容性質 | 自然的家 | 該留嗎 |
+|---|---|---|---|
+| §1 | motivation | commit body | ✓ 留 |
+| §2 | API contract（為何 nan）| **docstring** | 遷出 — 未來讀 `SuggestConfigResult` 的人會看 docstring，不會翻 git log |
+| §3 | deferred work / planning | **PR description** | 遷出 — 與 revert decision 無關，PR 合併後資訊也過期 |
+
+### 改寫（只留 motivation 段，其他遷家）
+
+```
+feat(introspect): expose machine-readable detection result (#20)
+
+Reasoning strings are useful for humans but not for pipeline gates
+that branch on panel shape. Surface the same observations as a
+structured dict so downstream agents don't need to parse prose.
+
+Refs #20
+```
+
+- §2 移到 `SuggestConfigResult.sparsity` 的 docstring（"empty panel returns nan because zero-ratio is undefined ..."）
+- §3 移到 PR description 的 "Deferred / Out of scope" 區塊
+- body 從 3 段壓到 1 段，但**沒有壓縮資訊** —— 資訊只是搬到正確的家
+
+自檢問句驗證：刪掉 §2/§3 後，未來想 revert 這個 commit 的人是否仍有足夠資訊？是 —— 因為 docstring 與 PR description 仍在原處可查。

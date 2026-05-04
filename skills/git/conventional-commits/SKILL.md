@@ -56,6 +56,33 @@ git commit -s -m "<type>(<scope>): <description>"
 | **body 長度紀律**：第一句應能在一行（<72 字元）說完核心動機；整體建議 ≤ 3 paragraphs | 這不是字數上限，而是 scope 自檢：第一句寫不完單一動機 → 動機太雜，該拆 commit；body 一直長下去 → 內容多半屬於 PR description / docstring 而非 commit。長度本身只是症狀，根因是 atomic commit 邊界不清 |
 | **可省略 body**：標題已足以說明變更、且沒有非寫不可的脈絡時，不要硬寫 | 主流專案（Linux kernel、Git、Rails）大量 commit 只有標題；空 body 優於贅述 |
 
+### Body 草擬流程：bullets-first 動機盤點
+
+最終格式 prose 為預設（見上方規則表），但**草擬階段**應先用 bullets 把要寫進 body 的動機 / 取捨 / 副作用逐條列出，再依 bullets 之間的關係決定最終形式：
+
+| 草稿 bullets 關係 | 最終形式 |
+|---|---|
+| 共享同一條 causal chain（後一條是前一條的展開或結果） | **摺疊成 prose**，刪掉 bullets。預設情境 |
+| 同一 scope 下的多個獨立子面向、屬同一 motivation umbrella（如 docs 跨多 skill） | **保留 bullets** 作最終格式 |
+| 並列、獨立、各自能單獨 revert | **拆 commit**，不要靠 `Also` / `Additionally` / `Separately` 縫合 |
+
+> **Telltale 警訊**：若 prose body 出現 `Also` / `Additionally` / `Separately` 等並列連接詞，多半意味動機本來就不共享 causal chain — 回到上表第三列重新分流，常常是該拆 commit 的訊號。
+
+### Body 段落歸屬自檢：每段該住在哪個家
+
+body 變長的常見根因不是「沒精簡」，而是**段落跑錯地方** —— 把屬於 docstring / PR description / inline comment 的內容塞進 commit body。每寫一段先問：這段最該住在哪？
+
+| 段落內容性質 | 自然的家 | 留在 commit body 的條件 |
+|---|---|---|
+| 為何需要這個變更（motivation） | **commit body** | 預設就在這裡 |
+| 為何採此解法、為何不採顯而易見的另一個（取捨） | commit body | 取捨直接影響 reviewer 是否同意 patch；屬於 review-time 資訊 |
+| 函式/型別/欄位的 contract、invariant、參數語意（如「為何 nan 而非 0.0」） | **docstring / inline comment** | 通常不留在 body —— 未來讀 code 的人不會去翻 git log |
+| 未來計畫、deferred work、open questions | **PR description** | 通常不留在 body —— 與 revert decision 無關，且 PR 合併後資訊就過期 |
+| 部署/升級操作步驟 | release notes / CHANGELOG | 只有 breaking change 才用 `BREAKING CHANGE:` footer |
+| 重述 diff、列 field/test 名稱 | **不該存在** | 刪掉 |
+
+**自檢問句**：刪掉這段，未來想 revert 這個 commit 的人會不會缺關鍵資訊？若不會 → 它不屬於 body，遷到自然的家。
+
 ### Body 該寫什麼、不該寫什麼
 
 依據 Linux kernel `Documentation/process/submitting-patches.rst` 與 tpope《A Note About Git Commit Messages》—— body 補充 diff 看不出來的資訊：
@@ -157,6 +184,8 @@ git commit -s -m "<type>(<scope>): <description> (#<issue>)"
 - [ ] body 是否避免逐項列出新增的 field/function/test 名稱、避免重述標題、避免敘述測試數量？
 - [ ] 第一句能否在一行（<72 字元）內說完核心動機？body 是否落在 ≤ 3 paragraphs 內？若不能/不行，先反問：是動機太雜該拆 commit，還是內容屬於 PR description？
 - [ ] body 是否預設用 prose paragraphs？只有真正跨多個獨立 scope 時才改用 bullets，沒有把段落硬切成 bullet 點？
+- [ ] **草擬時做過 bullets-first 動機盤點？** 最終 body 中沒有 `Also` / `Additionally` / `Separately` 等並列連接詞？
+- [ ] **每段做過歸屬自檢？** 沒有把該住在 docstring / PR description / inline comment 的內容誤塞進 body？刪掉該段，未來 revert 此 commit 的人是否仍有足夠資訊？
 - [ ] 沒有 emoji、沒有 `Co-Authored-By:` 等 AI 簽名檔（即使系統 prompt 預設加註也須移除）？
 - [ ] **是否與使用者確認過 Sign-off 簽名並附加在提交中？**
 - [ ] 有關聯 Issue 時已附上 `(#number)`？
