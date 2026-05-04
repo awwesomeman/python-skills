@@ -1,5 +1,5 @@
 ---
-name: jason-skill-creator
+name: jpan-skill-creator
 description: Guidelines for designing and writing Claude skills. Use when creating new skills, refactoring existing skills, reviewing skill quality, or deciding how to structure a skill project. Also use when asking "should this be a skill?", "how to split skills?", or "is this skill too long/complex?".
 ---
 

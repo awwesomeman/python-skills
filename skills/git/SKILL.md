@@ -1,5 +1,5 @@
 ---
-name: jason-git-skills
+name: jpan-git
 description: Git 相關技能入口。當執行 git commit、建立分支、提交 PR、或需要遵循 commit 規範時使用。根據任務路由到對應的子 skill。
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: jason-python-skills
+name: jpan-python
 description: Python 開發相關技能入口。當撰寫、審查、重構 Python 程式碼，或設定 logging 時使用。根據任務路由到對應的子 skill。
 ---
 
