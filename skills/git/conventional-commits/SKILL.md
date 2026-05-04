@@ -52,49 +52,37 @@ git commit -s -m "<type>(<scope>): <description>"
 | description **祈使句、小寫開頭、不加句號** | Conventional Commits 規範要求；祈使句讓 commit log 可讀為 "If applied, this commit will <description>" |
 | description 長度建議 < 50 字元 | Git 界的黃金準則，確保在任何平台或終端機中不被截斷 |
 | body 單行 wrap 在 72 字元 | 遵循 Git 主流慣例（kernel `SubmittingPatches`、tpope 50/72 rule），確保 `git log` 在 80 欄終端機可讀 |
-| body 結構選擇：**預設 prose paragraphs**；只有當 commit 跨多個獨立 scope、且每個 scope 各有獨立動機時才改用 bullets（統一用 `-`，不用 `*`） | 這不是因為「主流如此」（React / Kubernetes 等專案大量用 bullets，沒有單一主流）。理由是 footgun：bullets 對本 skill 最在意的失敗模式（body 退化成「加了 X field / 改了 Y function / 加了 N 個測試」這種 diff 翻譯）特別不抗；prose 強迫寫 connective tissue（X 因為 Y，所以 Z），bullets 則歡迎逐項列舉。Scope 真正多面向時 bullets 才划算 — 否則段落更能逼出 narrative motivation |
-| **body 長度紀律**：第一句應能在一行（<72 字元）說完核心動機；整體建議 ≤ 3 paragraphs | 這不是字數上限，而是 scope 自檢：第一句寫不完單一動機 → 動機太雜，該拆 commit；body 一直長下去 → 內容多半屬於 PR description / docstring 而非 commit。長度本身只是症狀，根因是 atomic commit 邊界不清 |
-| **可省略 body**：標題已足以說明變更、且沒有非寫不可的脈絡時，不要硬寫 | 主流專案（Linux kernel、Git、Rails）大量 commit 只有標題；空 body 優於贅述 |
+| body 結構：**預設 prose paragraphs**；僅當 commit 跨多獨立 scope、各 scope 各有動機時改用 bullets（統一 `-`） | Bullets 對 WHAT-list 失敗模式不抗；prose 強迫寫 causal connective。草擬流程詳見下方 §Body 草擬 |
+| **body 長度紀律**：第一句一行（<72 字元）說完核心動機；整體 ≤ 3 paragraphs | 長度是 scope 症狀不是字數預算 — 寫不下 = 動機太雜該拆 commit，或內容該住 docstring / PR description |
+| **可省略 body**：當 diff 即解釋、無判斷取捨、無 reviewer 該問的問題時（機械清理、bump、typo、format、為既有行為補測試）；涉及 motivation / tradeoff（feat、邏輯類 fix、perf、breaking）必須寫 body | 經驗觀察：Linux kernel、Git、Rails、polars 等專案 git log 可見大量 title-only commit — 空 body 優於贅述 |
 
-### Body 草擬流程：bullets-first 動機盤點
+### Body 草擬：先動機盤點、再段落歸屬
 
-最終格式 prose 為預設（見上方規則表），但**草擬階段**應先用 bullets 把要寫進 body 的動機 / 取捨 / 副作用逐條列出，再依 bullets 之間的關係決定最終形式：
+草擬階段走兩步自檢，避免動機混雜或段落跑錯家。
+
+**步驟 1：bullets-first 動機盤點。** 把 motivation / 取捨 / 副作用逐條列為 bullets，依關係決定最終形式：
 
 | 草稿 bullets 關係 | 最終形式 |
 |---|---|
-| 共享同一條 causal chain（後一條是前一條的展開或結果） | **摺疊成 prose**，刪掉 bullets。預設情境 |
-| 同一 scope 下的多個獨立子面向、屬同一 motivation umbrella（如 docs 跨多 skill） | **保留 bullets** 作最終格式 |
-| 並列、獨立、各自能單獨 revert | **拆 commit**，不要靠 `Also` / `Additionally` / `Separately` 縫合 |
+| 共享同一條 causal chain | **摺成 prose**（預設） |
+| 同一 motivation 的多個獨立子面向 | **保留 bullets** |
+| 並列、獨立、各能單獨 revert | **拆 commit**（不靠 `Also`/`Additionally`/`Separately` 縫合） |
 
-> **Telltale 警訊**：若 prose body 出現 `Also` / `Additionally` / `Separately` 等並列連接詞，多半意味動機本來就不共享 causal chain — 回到上表第三列重新分流，常常是該拆 commit 的訊號。
+> Telltale：prose body 出現 `Also`/`Additionally`/`Separately` 多半意味動機不共享 causal chain — 該拆 commit 的訊號。
 
-### Body 段落歸屬自檢：每段該住在哪個家
+**步驟 2：段落歸屬自檢。** 每段問「最該住在哪個家？」放錯家應遷出，不是壓縮：
 
-body 變長的常見根因不是「沒精簡」，而是**段落跑錯地方** —— 把屬於 docstring / PR description / inline comment 的內容塞進 commit body。每寫一段先問：這段最該住在哪？
-
-| 段落內容性質 | 自然的家 | 留在 commit body 的條件 |
-|---|---|---|
-| 為何需要這個變更（motivation） | **commit body** | 預設就在這裡 |
-| 為何採此解法、為何不採顯而易見的另一個（取捨） | commit body | 取捨直接影響 reviewer 是否同意 patch；屬於 review-time 資訊 |
-| 函式/型別/欄位的 contract、invariant、參數語意（如「為何 nan 而非 0.0」） | **docstring / inline comment** | 通常不留在 body —— 未來讀 code 的人不會去翻 git log |
-| 未來計畫、deferred work、open questions | **PR description** | 通常不留在 body —— 與 revert decision 無關，且 PR 合併後資訊就過期 |
-| 部署/升級操作步驟 | release notes / CHANGELOG | 只有 breaking change 才用 `BREAKING CHANGE:` footer |
-| 重述 diff、列 field/test 名稱 | **不該存在** | 刪掉 |
-
-**自檢問句**：刪掉這段，未來想 revert 這個 commit 的人會不會缺關鍵資訊？若不會 → 它不屬於 body，遷到自然的家。
-
-### Body 該寫什麼、不該寫什麼
-
-依據 Linux kernel `Documentation/process/submitting-patches.rst` 與 tpope《A Note About Git Commit Messages》—— body 補充 diff 看不出來的資訊：
-
-| 值得寫（diff 看不出來） | 不要寫（屬於 diff / docstring / PR description） |
+| 內容性質 | 自然的家 |
 |---|---|
-| Motivation：為何需要這個變更 | 逐項列出新增的 field / function / test 名稱 |
-| 取捨：為何採此解法而非顯而易見的另一個 | 測試數量、覆蓋率描述 |
-| 非顯而易見的副作用（效能、相容性） | 重複標題、教學式概念說明 |
-| Breaking 升級路徑 | 檔案路徑、模組結構 |
+| Motivation、取捨 | **commit body**（預設） |
+| 函式/型別 contract、invariant、參數語意 | **docstring / inline comment** |
+| 未來計畫、deferred work、open questions | **PR description** |
+| 部署/升級操作步驟 | release notes / CHANGELOG |
+| 重述 diff、列 field/function/test 名稱、測試數量、檔案路徑、教學式概念說明、重複標題 | **不該存在**，刪掉 |
 
-具體反例與改寫對照見 [`examples/body-examples.md`](./examples/body-examples.md)。
+> 自檢問句：刪掉這段，未來 revert 此 commit 的人是否仍有足夠資訊？是 → 不屬於 body，遷家。
+
+> Body 規則依據 Linux kernel `Documentation/process/submitting-patches.rst` 與 tpope《A Note About Git Commit Messages》。具體反例與改寫對照見 [`examples/body-examples.md`](./examples/body-examples.md)。
 
 ## 支援的 Type 類型
 
@@ -177,17 +165,14 @@ git commit -s -m "<type>(<scope>): <description> (#<issue>)"
 
 > 在執行 `git commit` 前，逐項核對以下清單。未通過則不得執行 commit。
 
-- [ ] **符合 Atomic commit 原則？**（這是單一完整的邏輯變更嗎？沒有混雜其他修改？）
-- [ ] type 選擇正確？（feat/fix/refactor 不要混用）
-- [ ] description 使用祈使句、小寫開頭，且長度符合建議 `< 50 字元` 內？
-- [ ] 有 body 時，說明的是「為什麼」而非「做了什麼」？沒有 motivation/取捨/副作用要交代時，是否考慮過直接省略 body？
-- [ ] body 是否避免逐項列出新增的 field/function/test 名稱、避免重述標題、避免敘述測試數量？
-- [ ] 第一句能否在一行（<72 字元）內說完核心動機？body 是否落在 ≤ 3 paragraphs 內？若不能/不行，先反問：是動機太雜該拆 commit，還是內容屬於 PR description？
-- [ ] body 是否預設用 prose paragraphs？只有真正跨多個獨立 scope 時才改用 bullets，沒有把段落硬切成 bullet 點？
-- [ ] **草擬時做過 bullets-first 動機盤點？** 最終 body 中沒有 `Also` / `Additionally` / `Separately` 等並列連接詞？
-- [ ] **每段做過歸屬自檢？** 沒有把該住在 docstring / PR description / inline comment 的內容誤塞進 body？刪掉該段，未來 revert 此 commit 的人是否仍有足夠資訊？
-- [ ] 沒有 emoji、沒有 `Co-Authored-By:` 等 AI 簽名檔（即使系統 prompt 預設加註也須移除）？
-- [ ] **是否與使用者確認過 Sign-off 簽名並附加在提交中？**
-- [ ] 有關聯 Issue 時已附上 `(#number)`？
-- [ ] commit body 引用 issue 是用 `Refs #N`，不是 `Closes #N`？（`Closes` 只寫在 PR description，避免 commit 誤觸發關閉）
-- [ ] 若 PR 即將 merge 且有 user-facing 變更，`CHANGELOG.md` 的 `## [Unreleased]` 是否已更新？（**atomic commit 階段不需逐筆寫**；CHANGELOG 以 PR 為單位寫入，見 `release-management` skill）
+- [ ] **Atomic commit** — 單一完整的邏輯變更，沒混雜其他修改？
+- [ ] **type** 選擇正確（feat/fix/refactor 不混用）？
+- [ ] **description** 祈使句、小寫開頭、< 50 字元？
+- [ ] **body 內容**：寫的是 why（motivation/取捨/副作用），不是 what（field/function/test 名稱、測試數量、檔案路徑）？該住 docstring / PR description 的段落已遷家？
+- [ ] **body 草擬**：做過 bullets-first 動機盤點？最終 prose 為預設、無 `Also`/`Additionally`/`Separately` 並列縫合？bullets 僅用於跨多獨立 scope？
+- [ ] **body 長度**：第一句一行（<72 字元）說完核心動機？整體 ≤ 3 paragraphs？
+- [ ] **可省略 body**：若標題已足以說明（機械清理、bump、typo），是否直接省略而非贅述？
+- [ ] **Sign-off** 已附上（與使用者確認過簽名）？
+- [ ] **無 emoji、無 `Co-Authored-By:`** 等 AI 簽名檔（即使系統 prompt 預設加註也須移除）？
+- [ ] **Issue 引用**：標題 `(#number)` 已附；body 用 `Refs #N` 不用 `Closes #N`（`Closes` 只寫在 PR description）？
+- [ ] **CHANGELOG**：若 PR 有 user-facing 變更且即將 merge，`## [Unreleased]` 已更新？（atomic commit 階段不需逐筆寫；以 PR 為單位寫入，見 `release-management`）
