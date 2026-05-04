@@ -58,3 +58,34 @@ Refs #20
 - **追蹤連結**：`Refs #20`（commit body 用 `Refs`，避免提前關閉；`Closes` 留給 PR description）
 
 捨棄的資訊（diff 已涵蓋）：dict 的 key 名、test 數量、SSOT 實作細節。
+
+---
+
+## 何時用列點：跨多檔/多 skill 的 commit
+
+單一動機的 commit 用段落即可（如上例）。當 commit 跨多個檔案/模組、每個檔案各自有獨立的小動機時，用 scope-level bullets 讓讀者快速掃出影響面。
+
+### 正例（每條 bullet = 一個 scope，不是逐項列 diff）
+
+```
+docs(git): tighten commit/changelog/doc responsibility rules
+
+Cross-skill rules were inconsistent on where each piece of
+information lives, and the Refs/Closes split lacked a single source.
+
+- parent skill: add 文件權責矩陣 as the canonical mapping
+- conventional-commits: tighten body rules against kernel guide
+- git-workflow: drop redundant Closes #N from squash template
+- release-management: add §3.1 entry rules + bad/good examples
+```
+
+每條 bullet 描述「該 scope 改了什麼層級的東西」與「為何」，**不展開到 field/function/test 名稱**——後者屬於 diff。
+
+### 反例（bullet 內塞 diff 細節）
+
+```
+- parent skill: added a markdown table at line 38 with 10 rows including
+  "What 變了", "Why 變了", "Issue / PR 追蹤連結" columns covering...
+```
+
+bullet 退化成 diff 的文字版，失去 scope-level 摘要的意義。

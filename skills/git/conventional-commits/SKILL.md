@@ -51,7 +51,8 @@ git commit -s -m "<type>(<scope>): <description>"
 | **每個 commit 必須附 `Signed-off-by:` 簽名** | 標示提交者並符合 [DCO](https://developercertificate.org/)；簽名取得策略（首次確認、後續 reuse）見 §3 |
 | description **祈使句、小寫開頭、不加句號** | Conventional Commits 規範要求；祈使句讓 commit log 可讀為 "If applied, this commit will <description>" |
 | description 長度建議 < 50 字元 | Git 界的黃金準則，確保在任何平台或終端機中不被截斷 |
-| body 採段落或列點皆可（列點統一用 `-`），單行 wrap 在 72 字元 | 遵循 Git 主流慣例（kernel `SubmittingPatches`、tpope 50/72 rule），確保 `git log` 在 80 欄終端機可讀 |
+| body 單行 wrap 在 72 字元 | 遵循 Git 主流慣例（kernel `SubmittingPatches`、tpope 50/72 rule），確保 `git log` 在 80 欄終端機可讀 |
+| body 結構選擇：**單一動機用段落，多面向變更用列點**（統一用 `-`，不用 `*`） | 段落適合敘述一條 motivation；跨多檔/多 skill 的 commit 用 scope-level bullets 讓讀者快速掃出影響面（React、Kubernetes、本 repo `c6d2dfc` 風格）。兩者皆主流，依 commit 性質選 |
 | **可省略 body**：標題已足以說明變更、且沒有非寫不可的脈絡時，不要硬寫 | 主流專案（Linux kernel、Git、Rails）大量 commit 只有標題；空 body 優於贅述 |
 
 ### Body 該寫什麼、不該寫什麼
