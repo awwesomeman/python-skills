@@ -90,7 +90,17 @@ Issue 內容依時效性分三層落腳，對齊 Jira / Linear 的 Description /
 
 當 issue 範圍過大（無法一個 PR 完成、或需多人並行），拆成**父 + 子 issue**，每個子 issue 對應獨立可 merge 的 PR。
 
-**機制**：**預設用 GitHub 原生 Sub-issues**（2024-10+，`gh issue develop` / UI「Add sub-issue」）——UI 自動顯示子 issue 開/關狀態、進度 bar，不污染父 body。若 repo 尚未啟用原生 Sub-issues（舊版 GHES / org 設定未開），退而在父 body 標準模板下方加 task list：
+**機制**：**預設用 GitHub 原生 Sub-issues**（2024-10+）——UI 自動顯示子 issue 開/關狀態、進度 bar，不污染父 body。建立方式：
+
+- **UI**：父 issue 頁面右側「Add sub-issue」面板
+- **Programmatic**：GraphQL `addSubIssue` mutation（需 `GraphQL-Features: sub_issues` preview header；`issueId` / `subIssueId` 為 **Node ID** 而非 issue number）
+
+  ```bash
+  gh api graphql -H "GraphQL-Features: sub_issues" \
+    -f query='mutation { addSubIssue(input: {issueId: "<parent-node-id>", subIssueId: "<child-node-id>"}) { subIssue { number } } }'
+  ```
+
+若 repo 尚未啟用原生 Sub-issues（舊版 GHES / org 設定未開），退而在父 body 標準模板下方加 task list：
 
 ```markdown
 ## Sub-issues
