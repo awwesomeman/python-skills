@@ -135,7 +135,9 @@ git status && git diff --staged && git diff
 
 ### 4. 執行 Commit
 
-提交時附上與使用者確認無誤的 Signed-off-by 簽名。若與系統環境吻合可使用 `-s` 自動加註，否則可手動加註 `Signed-off-by: <Name> <Email>` 在 body 結尾。
+提交時附上與使用者確認無誤的 Signed-off-by 簽名。
+
+> **`-s` flag 使用前必驗證**：先 `git config user.name` / `user.email` 比對使用者確認的 sign-off identity。常見錯配情境：開發機同時掛公司與個人帳號（公司 email 寫在 local config、但 OSS commit 要用個人 email），此時 `-s` 會寫入錯 email，事後需 rewrite history。**錯配 → 手動附 `Signed-off-by: <Name> <Email>` 在 body 結尾，不要用 `-s`**。
 
 ```bash
 # 僅標題
