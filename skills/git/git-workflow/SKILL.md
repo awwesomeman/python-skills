@@ -92,13 +92,15 @@ Issue 內容依時效性分三層落腳，對齊 Jira / Linear 的 Description /
 
 **機制**：**預設用 GitHub 原生 Sub-issues**（2024-10+）——UI 自動顯示子 issue 開/關狀態、進度 bar，不污染父 body。建立方式：
 
-- **UI**：父 issue 頁面右側「Add sub-issue」面板
+- **UI**：父 issue 頁面下方「Create sub-issue」按鈕
 - **Programmatic**：GraphQL `addSubIssue` mutation（需 `GraphQL-Features: sub_issues` preview header；`issueId` / `subIssueId` 為 **Node ID** 而非 issue number）
 
   ```bash
   gh api graphql -H "GraphQL-Features: sub_issues" \
     -f query='mutation { addSubIssue(input: {issueId: "<parent-node-id>", subIssueId: "<child-node-id>"}) { subIssue { number } } }'
   ```
+
+  > **Node ID 取得**：`gh issue view <N> --json id -q .id`（或 GraphQL `repository(...) { issue(number:N) { id } }`）。`sub_issues` 為 **preview header**，GitHub 將來正式 release 後可能不再需要——若命令突然回 schema error 先檢查此 header。
 
 若 repo 尚未啟用原生 Sub-issues（舊版 GHES / org 設定未開），退而在父 body 標準模板下方加 task list：
 
