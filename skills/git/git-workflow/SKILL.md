@@ -155,7 +155,7 @@ Body **只寫永遠為真的事實**（內容範疇見 §2 三層分工表「永
 - DoD 綁分支：`- [x] tests on feat/X branch`（DoD 應為 spec 而非分支狀態）
 - commit SHA：`be50883`（squash 後即 rot）
 
-> **DoD checkbox 一律不勾**：勾選即把進度狀態寫入 body，違反 tense-neutral。需要聚合進度時改走 §2 Sub-issue 拆分，由 GitHub 原生 sub-issue 完成度顯示作為 SSOT。
+> **DoD checkbox 一律不勾**（本 skill 偏好，非業界慣例——Linear / Jira / GitHub task list 主流做法是勾選作完成標誌）：勾選即把進度狀態寫入 body，違反 tense-neutral。需要聚合進度時改走 §2 Sub-issue 拆分，由 GitHub 原生 sub-issue 完成度顯示作為 SSOT。進入既有專案時，先確認當地慣例再決定是否套用此規則。
 
 ## 5. Merge 策略
 
