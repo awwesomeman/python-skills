@@ -81,6 +81,8 @@ git commit -s -m "<type>(<scope>): <description>"
 | 未來計畫、deferred work、open questions | **PR description** |
 | 部署/升級操作步驟 | release notes / CHANGELOG |
 | 重述 diff、列 field/function/test 名稱、測試數量、檔案路徑、教學式概念說明、重複標題 | **不該存在**，刪掉 |
+| 檔案重命名 / 移動清單、目錄樹（`src/foo/ → src/bar/`） | **不該存在**（`git show` / PR Files tab 已呈現） |
+| 從 issue body 複製貼上的 `## Scope` / `## Expected` / DoD checkbox 列表 | **不該存在**（issue body 是 single source；commit body rot 後語意分歧） |
 
 > 自檢問句：刪掉這段，未來 revert 此 commit 的人是否仍有足夠資訊？是 → 不屬於 body，遷家。
 

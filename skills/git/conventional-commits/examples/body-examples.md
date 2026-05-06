@@ -191,3 +191,91 @@ Refs #20
 - body 從 3 段壓到 1 段，但**沒有壓縮資訊** —— 資訊只是搬到正確的家
 
 自檢問句驗證：刪掉 §2/§3 後，未來想 revert 這個 commit 的人是否仍有足夠資訊？是 —— 因為 docstring 與 PR description 仍在原處可查。
+
+---
+
+## 反例：複製 issue body 的 Scope / Expected / DoD 進 commit body
+
+當 PR 對應的 issue 已寫過 `## Scope` / `## Expected` / `## Definition of Done`，commit body 不該複製貼上 —— issue 是 single source，複製只會 rot：issue body 後續編輯不會傳播到 commit。
+
+### 反例（commit body 整段抄 issue）
+
+```
+refactor(metrics): split four-angle primitives (#48)
+
+## Scope
+- Move IC / IR / turnover / decay primitives out of metrics.py
+- Each primitive owns its own module under metrics/
+
+## Expected
+- Public API unchanged; imports from factrix.metrics keep working
+- Each module ≤ 200 LOC
+
+## Definition of Done
+- [x] All primitives have isolated test files
+- [x] mypy --strict passes
+- [x] No circular imports
+
+Refs #48
+```
+
+問題：三個段落全部從 issue #48 body 複製，commit body 變成 issue 的鏡像。Issue 是契約 / spec 的 single source；commit body 該補的是「**為何這次選擇這樣切**」的 diff-invisible why。
+
+### 改寫（只留 diff-invisible 的 motivation）
+
+```
+refactor(metrics): split four-angle primitives into modules (#48)
+
+metrics.py grew past the point where four unrelated primitives
+shared a file out of historical accident. Splitting now (before
+adding the fifth in #52) keeps the import surface stable while
+letting each primitive evolve independently — the alternative
+of waiting until #52 forces the split would mix mechanical move
+with new logic in one diff.
+
+Refs #48
+```
+
+留下的是 issue body 不會寫的 why：「為何**現在**切，而不是等 #52」 —— 這是 reviewer 在 PR 階段、或未來 `git blame` 時會想知道的取捨，不重複 spec / DoD。
+
+---
+
+## 反例：列出檔案重命名 / 目錄樹
+
+`git show` / PR Files tab 已逐檔顯示 rename，commit body 再列一次純粹是雜訊。
+
+### 反例
+
+```
+refactor(layout): reorganise metrics package
+
+Move the four primitives into a flat module layout under
+factrix/metrics/.
+
+Files moved:
+- src/factrix/metrics.py → src/factrix/metrics/__init__.py
+- src/factrix/_ic_impl.py → src/factrix/metrics/ic.py
+- src/factrix/_ir_impl.py → src/factrix/metrics/ir.py
+- src/factrix/_turnover_impl.py → src/factrix/metrics/turnover.py
+- src/factrix/_decay_impl.py → src/factrix/metrics/decay.py
+
+Tree after:
+  factrix/metrics/
+    __init__.py
+    ic.py
+    ir.py
+    turnover.py
+    decay.py
+```
+
+問題：rename 清單與目錄樹 100% 是 diff 已呈現的資訊；body 沒有任何 motivation。
+
+### 改寫（省略 body 或只留 why）
+
+機械化 rename + 無語意變更 → **直接省略 body**：
+
+```
+refactor(layout): flatten metrics package layout
+```
+
+若有取捨值得記（例如「為何不直接拆 sub-package」），才寫一兩行 motivation —— 但仍不列檔案清單。
