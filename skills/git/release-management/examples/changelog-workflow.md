@@ -109,13 +109,19 @@ major_version_zero = true                         # pre-1.0 BREAKING bump MINOR
 
 ## 4. GitHub Release 指令（對應 SKILL.md §4）
 
-push tag 後立刻執行：
+> Push tag **前**先判斷 Mode：`ls .github/workflows/ | xargs grep -l "tags:.*v\\*"` 找有沒有 tag-triggered release workflow。
+
+### 4.1 Mode A — 手動建 Release
+
+無 tag-triggered CI release workflow 時，push tag 後立刻執行：
 
 ```bash
 # 從 CHANGELOG 中該版本區塊提取 notes，建立 Release
+# heading 對齊 cz 預設模板 `## v$version`（見 SKILL.md §5）
 gh release create vX.Y.Z \
   --title "vX.Y.Z" \
-  --notes-file <(awk '/^## \[X\.Y\.Z\]/,/^## \[/' CHANGELOG.md | sed '$d')
+  --latest \
+  --notes-file <(awk '/^## vX\.Y\.Z/,/^## v/' CHANGELOG.md | sed '$d')
 
 # 或互動式（會開編輯器，可預覽 / 微調 notes）
 gh release create vX.Y.Z --notes-from-tag
@@ -124,4 +130,59 @@ gh release create vX.Y.Z --notes-from-tag
 gh release create vX.Y.Z --prerelease
 ```
 
-> 若 release notes 與 CHANGELOG 區塊內容**完全等同**，可考慮自動化（GitHub Actions on tag push）。本 skill 預設手動，因 hybrid CHANGELOG 工作流已要求人工潤稿，多走一步 `gh release create` 成本極低。
+### 4.2 Mode B — CI 自動建 Release，只做驗證
+
+有 tag-triggered workflow（典型結構：`build` → `publish` PyPI → `github-release` with dist artifacts）時，push 完 tag **不要手動 `gh release create`**。等 CI 跑完再驗證：
+
+```bash
+# 等 CI 完成
+gh run watch $(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
+
+# 驗證 Release page + dist 附件齊全
+gh release view vX.Y.Z --json tagName,name,isDraft,isPrerelease,assets \
+  --jq '{tagName, name, isDraft, isPrerelease, assets: [.assets[].name]}'
+# 期望輸出包含 .whl + .tar.gz（Python 套件）或對應語言的 artifacts
+```
+
+### 4.3 Mode B 失敗恢復
+
+CI release workflow fail 時的標準恢復腳本：
+
+```bash
+RUN_ID=$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
+
+# Step 1: 確認哪個 sub-job 失敗 + publish 是否成功
+gh run view "$RUN_ID" --json jobs --jq '.jobs[] | {name, conclusion}'
+
+# Step 2: 若 github-release fail（最常見：race condition / CHANGELOG regex mismatch）
+#         且 publish=success → PyPI 已上線、不可重 publish
+gh release delete vX.Y.Z --yes        # 保留 tag，只刪 Release page
+gh run rerun "$RUN_ID" --failed       # 只重跑失敗 job，build/publish 不重跑
+
+# Step 3: 等重跑完成 + 驗證
+gh run watch "$RUN_ID"
+gh release view vX.Y.Z --json assets --jq '[.assets[].name]'
+```
+
+常見的 CI 自製 idempotency guard（會 trip 到第一次 fail 的就是這個 step）：
+
+```yaml
+# .github/workflows/release.yml
+- name: Fail if release already exists
+  env:
+    GH_TOKEN: ${{ github.token }}
+  run: |
+    TAG="${GITHUB_REF#refs/tags/}"
+    if gh release view "$TAG" &>/dev/null; then
+      echo "Release $TAG already exists — refusing to overwrite" >&2
+      exit 1
+    fi
+```
+
+設計用意是**防止 workflow 自己被重觸發兩次**而覆蓋既有 Release；但會誤殺「人類在 CI 之前手動 `gh release create`」的場景——這也是 Mode B 不該手動建 Release 的核心原因。
+
+### Don't
+
+- Mode B 下用 `gh run rerun --failed` 之前**沒先 `gh release delete`** — guard step 還是會 fail，rerun 變空轉
+- Mode B 下「為了趕快 ship」手動 `gh release create` —— 看似快，卻換來 (a) CI 紅燈 (b) Release page 沒附件 (c) 還是要走恢復流程，總時間更長
+- 用 `git tag -d vX.Y.Z && git push --delete origin vX.Y.Z && git tag vX.Y.Z && git push --tags` 重觸發 workflow——這會搞亂 tag 歷史；正確做法是 `gh run rerun --failed`，tag 不動
