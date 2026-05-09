@@ -181,7 +181,7 @@ Push tag **前**檢查 `.github/workflows/`：是否有 `on: push: tags: ['v*']`
 > Push 前再核對：
 
 - [ ] CHANGELOG 的 cz scaffold 已手動潤稿（Keep-a-Changelog 結構、WHY context、Removed migration note）？
-- [ ] 潤稿已 amend 進 release commit、tag 已重新指向 amend 後 SHA？
+- [ ] 潤稿已 amend 進 release commit、tag 已用 `git tag -fa`（**必帶 `-a`**，否則降級成 lightweight tag、`--follow-tags` 不會推）重新指向 amend 後 SHA？
 - [ ] `git push origin main --follow-tags` 已準備（**不要漏 tag**；偏好 `--follow-tags` 而非 `--tags`，前者只推送已關聯 commit 的 annotated tag，避免誤推本地殘留 tag）？
 - [ ] **已判斷是 Mode A（手動）還是 Mode B（CI 自動）**——檢查 `.github/workflows/` 有無 tag-triggered release workflow？
 

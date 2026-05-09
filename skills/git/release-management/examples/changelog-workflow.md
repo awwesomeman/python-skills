@@ -25,7 +25,9 @@
    ```bash
    git add CHANGELOG.md
    git commit --amend --no-edit
-   git tag -f vX.Y.Z                    # 重新指向 amend 後的 SHA（-f 取代刪除再建）
+   git tag -fa vX.Y.Z -m "vX.Y.Z"       # -a 必加！cz 原 tag 是 annotated，
+                                        # 純 `-f` 會降級為 lightweight，
+                                        # 下一步 `--follow-tags` 就不會推
    ```
    若 release commit 已 push 到 remote，**改走 follow-up commit**（避免改寫共享歷史）：
    ```bash
@@ -35,7 +37,9 @@
 
 6. **Push**：
    ```bash
-   git push origin main --follow-tags    # --follow-tags 只推送 annotated tag，比 --tags 安全
+   git push origin main --follow-tags    # 只推 annotated tag（lightweight 會被忽略）；
+                                         # 若 push 後發現 tag 沒上 remote，
+                                         # 99% 是上一步漏了 `-a` 變成 lightweight
    ```
 
 ---
