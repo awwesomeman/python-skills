@@ -85,6 +85,23 @@ Issue 內容依時效性分三層落腳，對齊 Jira / Linear 的 Description /
 > - **輕量 rationale**（影響限於本 issue，例如「為何選方案 A 而非 B」）→ body 加 `## Proposed Solution` 區段，後續接手者只看 body 即可掌握「現狀 + 解法」
 > - **重大架構決策**（跨 issue / 長期被引用）→ 走 **ADR**（`docs/adr/NNNN-*.md`）或 RFC document，不塞 issue body。issue 關閉後 body 沉在 closed list，ADR 才是 architectural source of truth
 > - **單次實作步驟** → 留在 comments，不回灌
+>
+> **例外**：design / RFC issue 的大型 solution 段不適用上表「Expected + DoD → Body」的預設配置，改走下方「Design issue 變體」。
+
+### Design issue 變體：solution 拆 comment
+
+**觸發條件**（任一成立）：(a) body 預估 > 200 行；(b) solution 段（含 API spec、決策表、DoD）顯著大於 Problem 段。一般 feat / fix / docs issue 不觸發，仍走主表格。
+
+觸發後改用以下分工：body 只留 **Problem + References**，Expected + DoD + 解法設計改貼成單一 top comment。
+
+| 載體 | 內容 |
+|------|------|
+| **Body** | Problem（為什麼要做）、References（學術 / 規範依據）、Refs（相關 issue）|
+| **Top comment** | Expected（API shape / 契約）、DoD checklist、決策表 / rationale |
+
+> DoD 即使住在 comment，**checkbox 一律不勾**的紀律仍適用（見 §4），由 sub-issue 完成度作為 SSOT。
+
+**Why**：(1) body 過長時 GitHub UI 會自動 fold，Problem 與 solution 都被收起來，等於兩段都看不到；(2) solution 在 design 階段會迭代，改 comment（保留時序）比 force-push 改 body 更乾淨；(3) Problem 是 issue 永久 anchor，被 `Refs #N` 引用時讀者要先看到的是「在解什麼問題」而非實作細節。
 
 ### Sub-issue：當 issue 太大需要拆分
 
