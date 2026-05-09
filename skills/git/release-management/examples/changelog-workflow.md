@@ -121,7 +121,7 @@ major_version_zero = true                         # pre-1.0 BREAKING bump MINOR
 
 ```bash
 # 從 CHANGELOG 中該版本區塊提取 notes，建立 Release
-# heading 對齊 cz 預設模板 `## v$version`（見 SKILL.md §5）
+# heading 跟 cz `tag_format` 連動，本 skill 設 `tag_format = "v$version"` → `## v1.2.3`（見 SKILL.md §5）
 gh release create vX.Y.Z \
   --title "vX.Y.Z" \
   --latest \
@@ -187,6 +187,7 @@ gh release view vX.Y.Z --json assets --jq '[.assets[].name]'
 
 ### Don't
 
+> 「Mode B 下手動 `gh release create`」的 Don't 規則見 SKILL.md §4，本節只列操作層 pitfall：
+
 - Mode B 下用 `gh run rerun --failed` 之前**沒先 `gh release delete`** — guard step 還是會 fail，rerun 變空轉
-- Mode B 下「為了趕快 ship」手動 `gh release create` —— 看似快，卻換來 (a) CI 紅燈 (b) Release page 沒附件 (c) 還是要走恢復流程，總時間更長
 - 用 `git tag -d vX.Y.Z && git push --delete origin vX.Y.Z && git tag vX.Y.Z && git push --tags` 重觸發 workflow——這會搞亂 tag 歷史；正確做法是 `gh run rerun --failed`，tag 不動
