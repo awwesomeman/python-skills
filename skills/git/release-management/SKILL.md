@@ -1,6 +1,6 @@
 ---
 name: release-management
-description: 版本發布節奏與機制。當判斷是否要 release、執行 cz bump、撰寫 CHANGELOG、建立 GitHub Release、或查 SemVer / 版本命名規則時使用。涵蓋 release-train 節奏、bump 位置紀律、hybrid changelog 工作流、GitHub Release、版本命名一致性、SemVer bump 速查。
+description: 版本發布節奏與機制。當判斷是否要 release、執行 cz bump、撰寫 CHANGELOG、建立 GitHub Release、命名 / 關閉 milestone、或查 SemVer / 版本命名規則時使用。涵蓋 release-train 節奏、bump 位置紀律、Milestone 命名與生命週期、hybrid changelog 工作流、GitHub Release、版本命名一致性、SemVer bump 速查。
 ---
 
 # Release Management Skill
@@ -36,6 +36,22 @@ description: 版本發布節奏與機制。當判斷是否要 release、執行 c
 | 需要命名版本給 demo / pin 使用 | 即時切版 |
 
 > 若不確定是否要 release，**預設「等」**——多累積一週的成本接近零；過早 release 的版本號永遠留在 tag 歷史。
+
+---
+
+## 1.5 Milestone：release 觸發容器
+
+§1 所述「累積到 milestone」具體就是 GitHub Milestone。命名與生命週期紀律：
+
+| 規則 | Why |
+|------|-----|
+| 命名對齊 SemVer（`v1.2.0`）或 release-train（`2026-Q2`、`2026-05`） | 與 tag、CHANGELOG entry、`cz bump` 推導的版本軸一致；命名分歧會讓 milestone 對不上 release |
+| 不用 `P1` / `Phase 1` / `Layer-A` 當 milestone 名 | 與 `priority/p1` label 職責重疊；planning label 含意會 drift（見父層權責矩陣 Planning labels 列）— milestone 名一旦 rename，歷史 release notes 反向引用就斷 |
+| 一 milestone = 一交付窗口；全 issue close（或 reassign）後立即關閉 | Milestone close 即 §1 觸發條件的彙總信號；open milestone 累積會變第二個 backlog，due-date 信號失效。長期未排程的項目走 Project board 或 `backlog` label，不開永久 milestone |
+| Milestone description 套用 issue body 紀律（Goal / Scope / Non-goals，tense-neutral） | description 會被 AI agent 抄進 release notes / 下游檔案；嵌入 SHA / 進度字句會立即 rot — 詳見 [`../git-workflow/SKILL.md` §4](../git-workflow/SKILL.md) |
+| Milestone 與 Label 軸線分工：milestone = **when ship**（時間/版本），label = **what kind**（priority、type、area） | 混用會讓兩種訊號互相污染；用 milestone 模擬 priority、用 label 模擬 release 都會破壞 release-train 推導 |
+
+> Issue 端綁定規則（父 sub-issue 綁同一 milestone）見 [`../git-workflow/SKILL.md` §2](../git-workflow/SKILL.md)。
 
 ---
 
