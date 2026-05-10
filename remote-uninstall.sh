@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# remote-uninstall.sh — Download and uninstall python-skills without cloning.
+# remote-uninstall.sh — Download and uninstall agent-skills without cloning.
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/awwesomeman/python-skills/main/remote-uninstall.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/awwesomeman/agent-skills/main/remote-uninstall.sh | bash
 #   curl -fsSL <url> | bash -s -- --skills "python,git" cursor
 #   curl -fsSL <url> | bash -s -- --local --skills "python" claude
 #
 # Environment variables:
-#   GITHUB_REPO            Override the default repo (default: awwesomeman/python-skills)
-#   PYTHON_SKILLS_BRANCH   Override the branch to download (default: main)
+#   GITHUB_REPO            Override the default repo (default: awwesomeman/agent-skills)
+#   AGENT_SKILLS_BRANCH   Override the branch to download (default: main)
 set -euo pipefail
 
 for cmd in curl tar; do
   command -v "$cmd" >/dev/null 2>&1 || { echo "[ERROR] '$cmd' is required but not found." >&2; exit 1; }
 done
 
-GITHUB_REPO="${GITHUB_REPO:-awwesomeman/python-skills}"
-BRANCH="${PYTHON_SKILLS_BRANCH:-main}"
+GITHUB_REPO="${GITHUB_REPO:-awwesomeman/agent-skills}"
+BRANCH="${AGENT_SKILLS_BRANCH:-main}"
 TARBALL_URL="https://github.com/$GITHUB_REPO/archive/$BRANCH.tar.gz"
 
 GREEN='\033[0;32m'
@@ -26,7 +26,7 @@ NC='\033[0m'
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-echo -e "${BLUE}Downloading python-skills from $GITHUB_REPO ($BRANCH)...${NC}"
+echo -e "${BLUE}Downloading agent-skills from $GITHUB_REPO ($BRANCH)...${NC}"
 curl -fsSL "$TARBALL_URL" | tar -xz -C "$WORK_DIR"
 
 # GitHub tarball extracts to <repo-name>-<branch>/

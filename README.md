@@ -1,4 +1,4 @@
-# python-skills
+# agent-skills
 
 跨 Agent 使用的 AI Skills 統一管理專案。
 
@@ -11,11 +11,11 @@
 ### 0. 取得專案
 
 ```bash
-git clone https://github.com/your-org/python-skills.git
-cd python-skills
+git clone https://github.com/your-org/agent-skills.git
+cd agent-skills
 ```
 
-> 建議 clone 到固定位置（如 `~/python-skills`），因為 install 腳本會建立 symlink 指向此目錄。移動或刪除源目錄會導致所有 AI 工具的 skill 失效。
+> 建議 clone 到固定位置（如 `~/agent-skills`），因為 install 腳本會建立 symlink 指向此目錄。移動或刪除源目錄會導致所有 AI 工具的 skill 失效。
 
 ```
 Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
@@ -39,7 +39,7 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 
 - 遠端 install：`curl -fsSL <BASE>/remote-install.sh | bash [-s -- <參數>]`
 - 遠端 uninstall：`curl -fsSL <BASE>/remote-uninstall.sh | bash [-s -- <參數>]`
-- `<BASE>` = `https://raw.githubusercontent.com/awwesomeman/python-skills/main`
+- `<BASE>` = `https://raw.githubusercontent.com/awwesomeman/agent-skills/main`
 - `*` 代表無需額外參數（直接 `| bash`，不用 `-s --`）
 
 | 需求場景 | 地端 install | 遠端 install | 地端 uninstall | 遠端 uninstall |
@@ -68,7 +68,7 @@ Usage: bash install.sh [OPTIONS] [AI_TOOLS...]
 我們採用依賴關注點分離（Separation of Concerns）的設計，將技能歸類至不同的目錄：
 
 ```
-python-skills/
+agent-skills/
 ├── skills/                           
 │   ├── git/                          # 版本控制與協作 (如 conventional-commits)
 │   ├── python/                       # 程式語言規範 (如 coding-standards)

@@ -53,7 +53,7 @@ remove_skill() {
   if [ -L "$path" ]; then
     rm "$path"
     echo -e "${GREEN}Removed symlink: $path${NC}"
-  elif [ -d "$path" ] && [ -f "$path/.installed-by-python-skills" ]; then
+  elif [ -d "$path" ] && [ -f "$path/.installed-by-agent-skills" ]; then
     rm -rf "$path"
     echo -e "${GREEN}Removed copied skill: $path${NC}"
   elif [ -e "$path" ]; then
@@ -65,7 +65,7 @@ remove_skill() {
         echo -e "${YELLOW}[SKIP] Kept unmanaged path: $path${NC}"
       fi
     else
-      echo -e "${RED}Not managed by python-skills, skipping: $path (use --force to remove)${NC}"
+      echo -e "${RED}Not managed by agent-skills, skipping: $path (use --force to remove)${NC}"
     fi
   fi
 }

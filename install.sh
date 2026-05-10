@@ -47,7 +47,7 @@ install_skill() {
       local is_covered=false
       while [ "$check_path" != "/" ] && [ -n "$check_path" ]; do
         check_path="$(dirname "$check_path")"
-        if [ -f "$check_path/.installed-by-python-skills" ]; then
+        if [ -f "$check_path/.installed-by-agent-skills" ]; then
           is_covered=true
           break
         fi
@@ -65,13 +65,13 @@ install_skill() {
       fi
     fi
 
-    if [ -f "$target_path/.installed-by-python-skills" ] || [ "$USE_FORCE" = true ]; then
-      if [ "$USE_FORCE" = true ] && [ ! -f "$target_path/.installed-by-python-skills" ]; then
+    if [ -f "$target_path/.installed-by-agent-skills" ] || [ "$USE_FORCE" = true ]; then
+      if [ "$USE_FORCE" = true ] && [ ! -f "$target_path/.installed-by-agent-skills" ]; then
         echo -e "${YELLOW}[INFO] Forcing overwrite of $target_path${NC}"
       fi
       rm -rf "$target_path"
     elif [ "$USE_COPY" = true ]; then
-      echo -e "${YELLOW}[WARN] $target_path exists and is not managed by python-skills -- skipping (use --force to overwrite)${NC}"
+      echo -e "${YELLOW}[WARN] $target_path exists and is not managed by agent-skills -- skipping (use --force to overwrite)${NC}"
       return
     else
       echo -e "${YELLOW}[WARN] $target_path exists and is not a symlink -- skipping to avoid overwrite (use --force to overwrite)${NC}"
@@ -86,7 +86,7 @@ install_skill() {
     cp -r "$source_path" "$target_path"
     # Exclude .git directory to avoid nested repository issues
     rm -rf "$target_path/.git" 2>/dev/null || true
-    echo "copy" > "$target_path/.installed-by-python-skills"
+    echo "copy" > "$target_path/.installed-by-agent-skills"
     echo -e "${GREEN}[OK] $skill_name (copied)${NC}"
   else
     ln -s "$source_path" "$target_path"
