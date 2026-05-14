@@ -81,7 +81,7 @@ Issue 內容依時效性分三層落腳，對齊 Jira / Linear 的 Description /
 
 > Milestone 命名與生命週期見 [`../release-management/SKILL.md` §1.5](../release-management/SKILL.md)。Issue 端唯一額外規則：父 issue 與其 sub-issue 綁同一 milestone（或子不綁），避免子散綁不同 milestone 破壞「父 = 整體驗收節點」語意。
 
-> **Why 優先級 / 階段走 Label / Milestone 而非 body**：(1) 與 tense-neutral 同源——優先級會隨 roadmap 演進而 drift，body 卻被視為「永久事實」；(2) AI agent 讀 body 時會把 `P1` 當設計約束抄進 commit / docstring，污染下游檔案（見父層權責矩陣 Planning labels 列）；(3) body 真要分群時用 milestone 綁定的版本語意（如 `v1.2.0`、`2026-Q2`），避開 `P1` / `P2` 這類會 drift 的標籤；長期未排程的項目走 Project board 或 `backlog` label，不開永久 milestone（milestone 必須有交付窗口，見 [`../release-management/SKILL.md` §1.5](../release-management/SKILL.md)）。
+> **Why 優先級 / 階段走 Label / Milestone 而非 body**：(1) 與 tense-neutral 同源——優先級會隨 roadmap 演進而 drift，body 卻被視為「永久事實」；(2) body 真要分群時用 milestone 綁定的版本語意（如 `v1.2.0`、`2026-Q2`），避開 `P1` / `P2` 這類會 drift 的標籤；長期未排程的項目走 Project board 或 `backlog` label，不開永久 milestone（milestone 必須有交付窗口，見 [`../release-management/SKILL.md` §1.5](../release-management/SKILL.md)）。
 >
 > **Why 過程討論留在 comments**：Plan 在開發中經常微調，寫進 body 會跟最終實作不一致；comments 有時序，自然反映演進，body 則須隨時可信。
 >
